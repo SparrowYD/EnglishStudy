@@ -32,20 +32,28 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Upload APK artifact
+      - name: Build signed release AAB (for Google Play)
+        run: ./gradlew :app:bundleRelease --stacktrace
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: shadowdict-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: shadowdict-builds
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
-      - name: Publish APK to a downloadable release
+      - name: Publish builds to a downloadable release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: debug-latest
-          name: ShadowDict (debug build)
+          name: ShadowDict (latest build)
           prerelease: true
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/bundle/release/app-release.aab
           body: |
-            자동 빌드된 디버그 APK입니다. 폰에서 아래 `app-debug.apk`를 눌러 설치하세요.
-            (설정에서 "출처를 알 수 없는 앱 설치"를 허용해야 할 수 있습니다.)
+            자동 빌드 결과물입니다.
+            - `app-release.aab` : 구글 플레이 콘솔 업로드용 (내부 테스트)
+            - `app-debug.apk` : 직접 설치용 (기기가 사이드로드를 허용할 때)
