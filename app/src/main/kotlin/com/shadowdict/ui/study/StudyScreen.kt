@@ -111,8 +111,9 @@ fun StudyScreen(
                 }
                 ytPlayer.seekTo(startSec)
                 ytPlayer.play()
-                // Poll the tracker and pause the loop at the line's end (spec §4).
-                while (ytController.tracker.currentSecond * 1000 < state.playEndMs) {
+                // Poll the position and pause the loop at the line's end (spec §4).
+                val endSec = state.playEndMs / 1000f
+                while (ytController.currentSecond < endSec) {
                     delay(100)
                 }
                 ytPlayer.pause()

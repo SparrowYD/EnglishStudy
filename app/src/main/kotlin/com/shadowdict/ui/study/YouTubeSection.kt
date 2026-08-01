@@ -6,17 +6,20 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerTracker
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
 /**
  * Imperative handle the study screen uses to drive section repeat on the
  * YouTube embed player. Subtitles are never overlaid on the player itself
  * (spec §1) — they live in the stage cards below it.
+ *
+ * The current playback position is tracked via the listener's `onCurrentSecond`
+ * callback rather than the library's tracker helper (keeps the dependency
+ * surface small).
  */
 class YouTubeController {
     var player: YouTubePlayer? = null
-    val tracker = YouTubePlayerTracker()
+    var currentSecond: Float = 0f
     var currentVideoId: String? = null
 }
 
@@ -39,9 +42,12 @@ fun YouTubeSection(
                 view.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
                     override fun onReady(youTubePlayer: YouTubePlayer) {
                         controller.player = youTubePlayer
-                        youTubePlayer.addListener(controller.tracker)
                         youTubePlayer.cueVideo(videoId, 0f)
                         controller.currentVideoId = videoId
+                    }
+
+                    override fun onCurrentSecond(youTubePlayer: YouTubePlayer, second: Float) {
+                        controller.currentSecond = second
                     }
                 })
             }
