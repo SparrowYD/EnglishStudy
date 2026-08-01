@@ -5,6 +5,7 @@ import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shadowdict.data.local.entity.SourceType
@@ -89,14 +91,34 @@ fun StudyScreen(
         if (isLocal && uri != null) player.prepare(Uri.parse(uri))
     }
 
+    val isYouTube = state.sourceType == SourceType.YOUTUBE
+    val ytController = remember { YouTubeController() }
+
     // React to play requests emitted by the ViewModel.
     LaunchedEffect(state.playRequest) {
         if (state.playRequest == 0) return@LaunchedEffect
         val line = state.line ?: return@LaunchedEffect
-        if (isLocal && state.mediaUri != null) {
-            player.playSection(state.playStartMs, state.playEndMs, state.playSpeed)
-        } else {
-            tts?.speak(line.textEn, TextToSpeech.QUEUE_FLUSH, null, "line-${line.id}")
+        val ytPlayer = ytController.player
+        when {
+            isLocal && state.mediaUri != null ->
+                player.playSection(state.playStartMs, state.playEndMs, state.playSpeed)
+
+            isYouTube && ytPlayer != null && state.mediaUri != null -> {
+                val startSec = state.playStartMs / 1000f
+                if (ytController.currentVideoId != state.mediaUri) {
+                    ytPlayer.cueVideo(state.mediaUri!!, startSec)
+                    ytController.currentVideoId = state.mediaUri
+                }
+                ytPlayer.seekTo(startSec)
+                ytPlayer.play()
+                // Poll the tracker and pause the loop at the line's end (spec §4).
+                while (ytController.tracker.currentSecond * 1000 < state.playEndMs) {
+                    delay(100)
+                }
+                ytPlayer.pause()
+            }
+
+            else -> tts?.speak(line.textEn, TextToSpeech.QUEUE_FLUSH, null, "line-${line.id}")
         }
     }
 
@@ -127,7 +149,19 @@ fun StudyScreen(
                     progress = { state.progressIndex.toFloat() / state.total.coerceAtLeast(1) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
+                // YouTube sources render the embed player (kept mounted so it can
+                // initialize); local/text sources have no on-screen video.
+                if (isYouTube && state.mediaUri != null) {
+                    YouTubeSection(
+                        videoId = state.mediaUri!!,
+                        controller = ytController,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f),
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
                 when (state.stage) {
                     Stage.LISTEN -> ListenStage(state, viewModel)
                     Stage.MEANING -> MeaningStage(state, viewModel)

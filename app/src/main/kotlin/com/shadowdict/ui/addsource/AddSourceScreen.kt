@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -113,11 +114,19 @@ fun AddSourceScreen(
             }
             SourceType.YOUTUBE -> {
                 OutlinedTextField(
-                    value = state.mediaLabel ?: "",
+                    value = state.youtubeUrlRaw,
                     onValueChange = viewModel::setYouTubeUrl,
                     label = { Text("유튜브 URL 붙여넣기") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                state.mediaUri?.let { id ->
+                    Text(
+                        "인식된 영상 ID: $id",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             SourceType.TEXT_ONLY -> {
                 Text("영상 없이 TTS로 학습합니다.", style = MaterialTheme.typography.bodyMedium)
@@ -138,11 +147,35 @@ fun AddSourceScreen(
                     .fillMaxWidth()
                     .height(160.dp),
             )
+        } else if (state.type == SourceType.YOUTUBE) {
+            Button(
+                onClick = { viewModel.fetchYouTubeCaptions() },
+                enabled = state.mediaUri != null && !state.fetchingCaptions,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (state.fetchingCaptions) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Text("  자막 가져오는 중…")
+                } else {
+                    Text("유튜브 자막 자동 가져오기")
+                }
+            }
+            OutlinedButton(
+                onClick = { subtitlePicker.launch(arrayOf("*/*")) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(state.subtitleFileName ?: "또는 .srt / .vtt 직접 선택") }
         } else {
             OutlinedButton(
                 onClick = { subtitlePicker.launch(arrayOf("*/*")) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(state.subtitleFileName ?: ".srt / .vtt 자막 선택") }
+        }
+
+        state.infoMessage?.let {
+            Text(it, color = MaterialTheme.colorScheme.primary)
         }
 
         // 4. Auto-generated flag (spec §2, §5.2)
