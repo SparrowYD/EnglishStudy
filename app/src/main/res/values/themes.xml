@@ -1,0 +1,4 @@
+<resources>
+    <!-- Base theme; the real UI colors come from Compose Material3 (Theme.kt). -->
+    <style name="Theme.ShadowDict" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
