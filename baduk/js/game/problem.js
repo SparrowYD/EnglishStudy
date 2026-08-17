@@ -17,6 +17,7 @@ import {
   canCapture, defenderCanEscape, readLadder, isSelfAtari, isTrueEye, eyeCount,
   isSafelyConnected, isConnected, canConnectNow, groupsInAtari, neighborhood,
 } from '../engine/analysis.js';
+import { survives } from '../engine/tsumego.js';
 
 export const VERDICT = {
   CORRECT: 'correct',   // 목표 달성
@@ -299,8 +300,10 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
       if (goal.minLiberties && board.libertyCount(g) < goal.minLiberties) {
         return { achieved: false, reason: 'few-liberties' };
       }
-      const r = canCapture(board, g, enemy, { maxDepth: depth, maxNodes: goal.maxNodes || 30000 });
-      return r.captured ? { achieved: false, reason: 'still-caught' } : { achieved: true };
+      const safe = survives(board, g, enemy, () => !canCapture(
+        board, g, enemy, { maxDepth: depth, maxNodes: goal.maxNodes || 30000 },
+      ).captured);
+      return safe ? { achieved: true } : { achieved: false, reason: 'still-caught' };
     }
     case 'connect': {
       const a = idxOf(goal.a);
@@ -327,16 +330,42 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
         const grp = board.group(g);
         if (eyeCount(board, grp) >= 2) return { achieved: true };
       }
-      const r = canCapture(board, g, enemy, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 });
-      return r.captured ? { achieved: false, reason: 'killed' } : { achieved: true };
+      // 둘러싸인 모양이면 완전탐색으로 정확히 판정하고, 아니면 국지 탐색으로 넘어간다.
+      const alive = survives(board, g, enemy, () => !canCapture(
+        board, g, enemy, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 },
+      ).captured);
+      return alive ? { achieved: true } : { achieved: false, reason: 'killed' };
     }
     case 'kill': {
       const g = idxOf(goal.group);
       if (board.cells[g] === EMPTY) return { achieved: true };
       // 착수 직후 = 상대 차례. 상대가 살릴 수 있으면 아직 잡은 것이 아니다.
-      return defenderCanEscape(board, g, color, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 })
-        ? { achieved: false, reason: 'alive' }
-        : { achieved: true };
+      const alive = survives(board, g, enemy, () => defenderCanEscape(
+        board, g, color, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 },
+      ));
+      return alive ? { achieved: false, reason: 'alive' } : { achieved: true };
+    }
+    case 'ko': {
+      // 패를 만들었는가. 방금 한 점을 따내 되따내기가 금지된 상태가 패다.
+      // "죽은 돌을 패로 버틴다"(LEVEL 48)를 판정할 때 쓴다.
+      if (board.ko < 0) return { achieved: false, reason: 'no-ko' };
+      if (goal.at != null && board.ko !== idxOf(goal.at)) return { achieved: false, reason: 'wrong-ko' };
+      return { achieved: true };
+    }
+    case 'threat': {
+      // 팻감 — 상대가 받지 않으면 내가 잡는다는 위협을 만들었는가.
+      // 위협의 크기(잡을 돌 수)를 minStones로 정한다.
+      const targets = (goal.targets || []).map(idxOf);
+      for (const t of targets) {
+        if (board.cells[t] !== enemy) continue;
+        const g = board.group(t);
+        if (goal.minStones && g.stones.length < goal.minStones) continue;
+        const r = canCapture(board, t, color, {
+          maxDepth: goal.depth || 6, maxNodes: goal.maxNodes || 20000,
+        });
+        if (r.captured) return { achieved: true };
+      }
+      return { achieved: false, reason: 'no-threat' };
     }
     case 'reduce': {
       // "상대 활로를 실제로 줄였는가" — 먹여치기처럼 단수까지는 못 가지만
