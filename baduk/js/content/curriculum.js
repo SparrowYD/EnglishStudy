@@ -1,7 +1,7 @@
 /**
  * 100 LEVEL 커리큘럼.
  *
- * 지금 실제로 플레이할 수 있는 것은 LEVEL 1~20이다.
+ * 지금 실제로 플레이할 수 있는 것은 LEVEL 1~30이다.
  * 나머지 챕터는 "이런 순서로 이어진다"는 지도를 보여 주되,
  * 준비 중이라는 사실을 화면에서 분명히 표시한다.
  * (요구사항 79 — 이름만 100개 나열해 놓고 되는 것처럼 보이게 하지 않는다)
@@ -9,8 +9,9 @@
 
 import { CHAPTER1 } from './ch1.js';
 import { CHAPTER2 } from './ch2.js';
+import { CHAPTER3 } from './ch3.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3];
 
 export const TOTAL_LEVELS = 100;
 
@@ -32,9 +33,8 @@ export const CHAPTERS = [
     summary: '붙임·젖힘·뻗음부터 날일자·한칸뜀까지, 속도와 안전을 저울질하는 법.',
   },
   {
-    id: 3, range: [21, 30], title: '좋은 모양과 나쁜 모양', ready: false,
-    summary: '마늘모·빈삼각·들여다봄·어깨짚기·모자·건너붙임·껴붙임·배붙임.',
-    titles: ['마늘모', '빈삼각', '우직삼각과 뭉친 돌', '들여다봄', '어깨짚기', '모자', '건너붙임', '껴붙임', '배붙임 / 옆붙임', '행마와 형태 종합시험'],
+    id: 3, range: [21, 30], title: '좋은 모양과 나쁜 모양', ready: true,
+    summary: '모양의 좋고 나쁨을 느낌이 아니라 활로 숫자로 확인한다.',
   },
   {
     id: 4, range: [31, 40], title: '돌을 잡는 전술 공식', ready: false,

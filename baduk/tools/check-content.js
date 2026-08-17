@@ -3,7 +3,9 @@ import { CHAPTER1 } from '../js/content/ch1.js';
 import { validateAll } from '../js/content/validate.js';
 
 let chapters = [CHAPTER1];
-try { const m = await import('../js/content/ch2.js'); chapters.push(m.CHAPTER2); } catch {}
+for (const f of ['ch2','ch3','ch4','ch5']) {
+  try { const m = await import(`../js/content/${f}.js`); chapters.push(Object.values(m)[0]); } catch {}
+}
 
 let bad = 0, total = 0;
 for (const levels of chapters) {

@@ -57,7 +57,7 @@ export function stageMapScreen(app) {
       progressBar(p.clearedCount() / TOTAL_LEVELS),
     ),
     el('div', { class: 'notice' }, rich(
-      'LEVEL 1~20은 지금 모두 플레이할 수 있습니다. CHAPTER 3 이후는 커리큘럼 지도만 먼저 공개되어 있고 **아직 준비 중**입니다.',
+      'LEVEL 1~30은 지금 모두 플레이할 수 있습니다. CHAPTER 4 이후는 커리큘럼 지도만 먼저 공개되어 있고 **아직 준비 중**입니다.',
     )),
     ...chapters,
   ));
@@ -83,7 +83,7 @@ export function stageScreen(app, params) {
     return el('div', {}, topbar(app, `LEVEL ${id}`), el('div', { class: 'wrap' },
       card(
         el('h2', { text: '아직 준비 중인 LEVEL입니다' }),
-        el('p', {}, rich('이 단계의 콘텐츠는 아직 만들어지지 않았습니다. 지금은 **LEVEL 1~20**을 플레이할 수 있습니다.')),
+        el('p', {}, rich('이 단계의 콘텐츠는 아직 만들어지지 않았습니다. 지금은 **LEVEL 1~30**을 플레이할 수 있습니다.')),
         button('스테이지 지도로', () => app.go('/map'), { variant: 'primary' }),
       ),
     ));

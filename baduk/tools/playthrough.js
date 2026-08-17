@@ -135,12 +135,12 @@ for (let id = 1; id <= LAST; id++) {
   }
 }
 
-const unlocked = await page.evaluate(() => {
+const unlocked = await page.evaluate((last) => {
   let n = 0;
-  for (let i = 1; i <= 20; i++) if (window.baduk.progress.isUnlocked(i)) n++;
+  for (let i = 1; i <= last; i++) if (window.baduk.progress.isUnlocked(i)) n++;
   return n;
-});
-console.log(`\n통과한 LEVEL ${played}/${LAST}, 열린 LEVEL ${unlocked}/20`);
+}, LAST);
+console.log(`\n통과한 LEVEL ${played}/${LAST}, 열린 LEVEL ${unlocked}/${LAST}`);
 if (errors.length) {
   console.log('콘솔 오류:');
   for (const e of [...new Set(errors)].slice(0, 10)) console.log('  ! ' + e.slice(0, 200));
