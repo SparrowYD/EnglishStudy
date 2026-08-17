@@ -1,0 +1,11 @@
+{
+  "name": "baduk-100",
+  "version": "0.1.0",
+  "description": "바둑 100 — 100단계로 배우는 바둑 학습 게임",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/",
+    "start": "node tools/serve.js"
+  }
+}
