@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Board, BLACK, WHITE, EMPTY, setup, fromLabel, toLabel } from '../js/engine/board.js';
 import {
   readLadder, canCapture, isTrueEye, eyeCount, isSelfAtari,
-  groupsInAtari, isSafelyConnected, isConnected,
+  groupsInAtari, isSafelyConnected, isConnected, defenderCanEscape,
 } from '../js/engine/analysis.js';
 
 const L = (l) => fromLabel(l, 19);
@@ -98,6 +98,51 @@ test('연결: 호구는 상대가 끊으러 와도 이을 수 있다', () => {
   const hogu = setup({ black: ['D4', 'E5', 'F4'] });
   assert.equal(isConnected(hogu, L('D4'), L('F4')), false, '아직 물리적으로는 떨어져 있다');
   assert.equal(isSafelyConnected(hogu, L('D4'), L('F4'), BLACK), true, '호구는 안전한 연결');
+});
+
+test('달아날 수 있는 돌을 잡혔다고 하지 않는다 (탐색 구역 회귀)', () => {
+  // 흑 벽 아래의 백 한 점은 활로가 3개라 한 수로는 잡히지 않는다.
+  // 예전에는 탐색 구역을 처음 한 번만 잡아, 백이 그 구역 밖으로 달아나면
+  // 둘 곳이 없어져 "잡혔다"고 잘못 판정했다.
+  const board = setup({ black: ['D5', 'E5', 'F5'], white: ['E4'] });
+  const target = L('E4');
+  assert.equal(board.libertyCount(target), 3);
+  for (const p of [L('D4'), L('F4'), L('E3'), L('F3'), L('D3')]) {
+    const probe = board.clone();
+    assert.ok(probe.play(BLACK, p).ok);
+    assert.equal(defenderCanEscape(probe, target, BLACK, { maxDepth: 8 }), true,
+      `${toLabel(p, 19)} 한 수로는 잡히지 않아야 한다`);
+  }
+});
+
+test('잡혔는지 판정은 달아나는 쪽 차례로 한다 (두 수 연속 금지 회귀)', () => {
+  // 흑이 한 수를 둔 직후에는 백 차례다. 이때 canCapture(잡는 쪽 차례)를 쓰면
+  // 흑에게 두 수를 연속으로 주는 셈이 되어 판정이 후해진다.
+  const board = setup({ black: ['D5', 'E5', 'F5'], white: ['E4'] });
+  const probe = board.clone();
+  probe.play(BLACK, L('F3'));
+  const target = L('E4');
+  assert.equal(canCapture(probe, target, BLACK, { maxDepth: 8 }).captured, true,
+    '흑이 한 번 더 둘 수 있다면 잡을 수 있다');
+  assert.equal(defenderCanEscape(probe, target, BLACK, { maxDepth: 8 }), true,
+    '그러나 지금은 백 차례이므로 백이 살릴 수 있다');
+});
+
+test('장문: 붙여서는 못 잡고 한 칸 떨어져 씌워야 잡힌다', () => {
+  const board = setup({ black: ['D5', 'D4', 'D3', 'F3'], white: ['E4'] });
+  const target = L('E4');
+  assert.equal(readLadder(board, target, BLACK).captured, false, '축으로는 잡히지 않는다');
+
+  const net = board.clone();
+  net.play(BLACK, L('F5'));
+  assert.equal(defenderCanEscape(net, target, BLACK, { maxDepth: 8 }), false, 'F5 장문이면 백은 못 산다');
+
+  for (const p of ['E5', 'F4', 'E3']) {
+    const probe = board.clone();
+    probe.play(BLACK, L(p));
+    assert.equal(defenderCanEscape(probe, target, BLACK, { maxDepth: 8 }), true,
+      `${p}처럼 붙여서 막으면 백이 달아난다`);
+  }
 });
 
 test('연결: 그냥 한 칸 벌린 두 점은 끊길 수 있다', () => {

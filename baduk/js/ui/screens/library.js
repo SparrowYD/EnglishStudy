@@ -302,6 +302,7 @@ export function soloProblem(app, problem, onSolved) {
   const canvas = el('canvas', { class: 'board' });
   const view = new BoardView(canvas, { size, onClick: (idx) => onClick(idx) });
   view.setBoard(session.board).setView('auto').setGhostColor(session.userColor);
+  canvas.__problemSession = session;
   requestAnimationFrame(() => view.render());
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => view.render()).observe(canvas);
 

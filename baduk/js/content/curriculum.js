@@ -1,7 +1,7 @@
 /**
  * 100 LEVEL 커리큘럼.
  *
- * 지금 실제로 플레이할 수 있는 것은 LEVEL 1~30이다.
+ * 지금 실제로 플레이할 수 있는 것은 LEVEL 1~35이다(CHAPTER 4는 절반까지).
  * 나머지 챕터는 "이런 순서로 이어진다"는 지도를 보여 주되,
  * 준비 중이라는 사실을 화면에서 분명히 표시한다.
  * (요구사항 79 — 이름만 100개 나열해 놓고 되는 것처럼 보이게 하지 않는다)
@@ -10,8 +10,9 @@
 import { CHAPTER1 } from './ch1.js';
 import { CHAPTER2 } from './ch2.js';
 import { CHAPTER3 } from './ch3.js';
+import { CHAPTER4 } from './ch4.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4];
 
 export const TOTAL_LEVELS = 100;
 
@@ -38,7 +39,7 @@ export const CHAPTERS = [
   },
   {
     id: 4, range: [31, 40], title: '돌을 잡는 전술 공식', ready: false,
-    summary: '양단수·축·축머리·장문·촉촉수·환격·먹여치기·자충 유도.',
+    summary: '양단수·축·축머리·장문까지 구현. 촉촉수·환격·먹여치기·자충 유도는 준비 중.',
     titles: ['양단수', '축의 원리', '축으로 잡기', '축머리와 축의 유불리', '장문', '촉촉수 / 연단수', '환격', '먹여치기', '자충 유도', '포획 전술 종합시험'],
   },
   {

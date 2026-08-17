@@ -18,17 +18,19 @@ const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(String(e)));
 
-/** 브라우저 안에서 규칙 엔진에 물어 현재 문제의 정답 좌표를 구한다. */
-async function solutionsFor(levelId, stepIndex) {
-  return page.evaluate(async ([id, si]) => {
-    const { getLevel } = await import('/js/content/curriculum.js');
-    const { ProblemSession } = await import('/js/game/problem.js');
-    const lv = getLevel(id);
-    const step = lv.steps[si];
-    if (!step || !step.problem) return null;
-    const s = new ProblemSession(step.problem);
-    return s.solutions();
-  }, [levelId, stepIndex]);
+/**
+ * 브라우저 안에서 규칙 엔진에 물어 **지금 진행 중인** 문제의 정답 좌표를 구한다.
+ * 축처럼 여러 수에 걸친 문제는 매 수 국면이 달라지므로, 화면에 살아 있는
+ * 세션의 현재 반면을 그대로 읽어야 한다.
+ */
+async function solutionsFor() {
+  return page.evaluate(async () => {
+    const cv = document.querySelector('canvas.board');
+    const s = cv && cv.__problemSession;
+    if (!s) return null;
+    const { findSolutions } = await import('/js/game/problem.js');
+    return findSolutions(s.problem, s.board, s.userColor, s.size);
+  });
 }
 
 async function clickPoint(idx) {
@@ -92,7 +94,7 @@ for (let id = 1; id <= LAST; id++) {
       await page.waitForTimeout(150);
       await page.getByRole('button', { name: '다음 →' }).click();
     } else {
-      const sols = await solutionsFor(id, st.index);
+      const sols = await solutionsFor();
       if (!sols || sols.length === 0) { failures.push(`LEVEL ${id} 단계 ${st.index}: 정답 없음`); break; }
       await clickPoint(sols[0]);
       await page.waitForTimeout(200);
@@ -102,11 +104,7 @@ for (let id = 1; id <= LAST; id++) {
       } else {
         // 여러 수짜리 문제 — 남은 수를 이어서 둔다
         for (let k = 0; k < 30; k++) {
-          const more = await solutionsFor(id, st.index);
-          const live = await page.evaluate(() => {
-            const cv = document.querySelector('canvas.board');
-            return cv && cv.__boardview ? [...cv.__boardview.board.cells].filter((x) => x !== 0).length : 0;
-          });
+          const more = await solutionsFor();
           if (await page.getByRole('button', { name: '다음 →' }).count()) break;
           if (!more || !more.length) break;
           await clickPoint(more[0]);

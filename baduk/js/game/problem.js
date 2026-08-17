@@ -14,7 +14,7 @@
 
 import { Board, BLACK, WHITE, EMPTY, opposite, setup, fromLabel, toLabel, COLOR_NAME } from '../engine/board.js';
 import {
-  canCapture, readLadder, isSelfAtari, isTrueEye, eyeCount,
+  canCapture, defenderCanEscape, readLadder, isSelfAtari, isTrueEye, eyeCount,
   isSafelyConnected, isConnected, canConnectNow, groupsInAtari, neighborhood,
 } from '../engine/analysis.js';
 
@@ -124,6 +124,21 @@ export class ProblemSession {
     // 여러 수에 걸친 문제(축 수읽기 등)에서는 "아직 목표를 이루진 않았지만 잘 가고 있는 수"가 있다.
     // progressGoal은 상대의 응수까지 둔 뒤에 판정한다 — 그래야 내 수가 정말 성립했는지 알 수 있다.
     if (this.problem.progressGoal) {
+      // moveGoal은 상대 응수 **전에** 내 수 자체를 검사한다.
+      // 축 문제에서 "이 수가 단수를 만들었는가"처럼, 응수 뒤에는 확인할 수 없는 조건에 쓴다.
+      if (this.problem.moveGoal) {
+        const mv = evaluateGoal(
+          { ...this.problem, goal: this.problem.moveGoal }, before, after, this.userColor, this.size,
+        );
+        if (!mv.achieved) {
+          this.wrongCount += 1;
+          const r = explainWrong({
+            problem: { ...this.problem, goal: this.problem.moveGoal },
+            before, after, move: idx, color: this.userColor, size: this.size, goalResult: mv,
+          });
+          return { verdict: VERDICT.WRONG, message: r.headline, detail: r.detail };
+        }
+      }
       const snapshot = { board: this.board.clone(), moves: this.moves.slice() };
       this.board = after;
       this.moves.push({ color: this.userColor, idx, verdict: 'progress' });
@@ -241,8 +256,11 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
         if (board.cells[t] === EMPTY) continue;           // 이미 따냈다
         if (board.cells[t] === color) continue;           // 내 돌이 되어 있다
         if (goal.immediate) return { achieved: false, reason: 'still-alive' };
-        const r = canCapture(board, t, color, { maxDepth: depth, maxNodes: goal.maxNodes || 30000 });
-        if (!r.captured) return { achieved: false, reason: 'still-alive' };
+        // 내 착수 직후이므로 지금은 상대 차례다. "상대가 살릴 수 있는가"로 물어야
+        // 나에게 두 수를 연속으로 주는 후한 판정이 되지 않는다.
+        if (defenderCanEscape(board, t, color, { maxDepth: depth, maxNodes: goal.maxNodes || 30000 })) {
+          return { achieved: false, reason: 'still-alive' };
+        }
       }
       return { achieved: true };
     }
@@ -252,6 +270,17 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
         if (board.cells[t] === EMPTY) continue;
         const g = board.group(t);
         if (!g || g.liberties.length !== 1) return { achieved: false, reason: 'not-atari' };
+      }
+      // byFilling: 이미 단수인 돌 앞에서 아무 곳에나 두는 것을 막는다.
+      // 축처럼 "매 수 활로를 하나씩 메워야" 하는 문제에서 반드시 필요하다.
+      if (goal.byFilling) {
+        const last = lastMoveOf(initial, board, color);
+        if (last < 0) return { achieved: false, reason: 'no-move' };
+        const filled = targets.some((t) => {
+          if (initial.cells[t] === EMPTY) return false;
+          return initial.group(t).liberties.includes(last);
+        });
+        if (!filled) return { achieved: false, reason: 'not-filling' };
       }
       return { achieved: true };
     }
@@ -304,8 +333,10 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
     case 'kill': {
       const g = idxOf(goal.group);
       if (board.cells[g] === EMPTY) return { achieved: true };
-      const r = canCapture(board, g, color, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 });
-      return r.captured ? { achieved: true } : { achieved: false, reason: 'alive' };
+      // 착수 직후 = 상대 차례. 상대가 살릴 수 있으면 아직 잡은 것이 아니다.
+      return defenderCanEscape(board, g, color, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 })
+        ? { achieved: false, reason: 'alive' }
+        : { achieved: true };
     }
     case 'ladder': {
       // 축이 아직 성립하는가. 잡는 쪽 차례일 때 판정해야 의미가 맞다.
@@ -425,6 +456,12 @@ export function explainWrong(ctx) {
       break;
     }
     case 'atari': {
+      if (goalResult?.reason === 'not-filling') {
+        return {
+          headline: '상대 돌의 활로를 메우는 수가 아닙니다.',
+          detail: '축은 매 수 상대의 활로를 하나씩 메워 단수를 유지해야 합니다. 다른 곳을 두면 상대가 달아납니다.',
+        };
+      }
       const targets = (goal.targets || []).map(idxOf);
       for (const t of targets) {
         if (after.cells[t] === EMPTY) continue;
@@ -565,12 +602,25 @@ export function findSolutions(problem, board, color, size = 19) {
     return (goal.accept || []).map((l) => (typeof l === 'number' ? l : fromLabel(l, size)));
   }
   const zone = solutionZone(problem, board, size);
+  const enemy = opposite(color);
   const out = [];
   for (const p of zone) {
     if (board.cells[p] !== EMPTY) continue;
     const probe = board.clone();
     if (!probe.play(color, p).ok) continue;
-    if (evaluateGoal(problem, board, probe, color, size).achieved) out.push(p);
+    if (evaluateGoal(problem, board, probe, color, size).achieved) { out.push(p); continue; }
+
+    // 축처럼 여러 수에 걸친 문제에서는 "아직 목표를 이루진 않았지만 올바른 첫 수"도 정답이다.
+    // 채점기와 같은 기준(moveGoal + 응수 뒤 progressGoal)으로 판정한다.
+    if (!problem.progressGoal) continue;
+    if (problem.moveGoal) {
+      const mv = evaluateGoal({ ...problem, goal: problem.moveGoal }, board, probe, color, size);
+      if (!mv.achieved) continue;
+    }
+    const after = probe.clone();
+    const reply = bestResistance(after, enemy, problem);
+    if (reply != null && reply >= 0) after.play(enemy, reply);
+    if (evaluateGoal({ ...problem, goal: problem.progressGoal }, board, after, color, size).achieved) out.push(p);
   }
   return out;
 }

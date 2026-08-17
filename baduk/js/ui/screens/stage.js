@@ -34,11 +34,15 @@ export function stageMapScreen(app) {
       );
     });
 
+    const readyCount = map.filter((m) => m.chapter === ch.id && m.ready).length;
+    const chapterTotal = ch.range[1] - ch.range[0] + 1;
     return el('div', { class: 'chapter' },
       el('div', { class: 'chapter-head' },
         el('h2', { text: `CHAPTER ${ch.id} · ${ch.title}` }),
         el('span', { class: 'n', text: `LEVEL ${ch.range[0]}~${ch.range[1]}` }),
-        ch.ready ? null : badge('준비 중', 'soon'),
+        readyCount === 0 ? badge('준비 중', 'soon')
+          : readyCount < chapterTotal ? badge(`${readyCount}/${chapterTotal} 구현`, 'soon')
+            : null,
       ),
       el('p', { class: 'faint', text: ch.summary }),
       el('div', { class: 'level-grid' }, ...tiles),
@@ -57,7 +61,7 @@ export function stageMapScreen(app) {
       progressBar(p.clearedCount() / TOTAL_LEVELS),
     ),
     el('div', { class: 'notice' }, rich(
-      'LEVEL 1~30은 지금 모두 플레이할 수 있습니다. CHAPTER 4 이후는 커리큘럼 지도만 먼저 공개되어 있고 **아직 준비 중**입니다.',
+      'LEVEL 1~35를 지금 플레이할 수 있습니다. 나머지 단계는 커리큘럼 지도만 먼저 공개되어 있고 **아직 준비 중**이며, 눌러도 열리지 않습니다.',
     )),
     ...chapters,
   ));
@@ -83,7 +87,7 @@ export function stageScreen(app, params) {
     return el('div', {}, topbar(app, `LEVEL ${id}`), el('div', { class: 'wrap' },
       card(
         el('h2', { text: '아직 준비 중인 LEVEL입니다' }),
-        el('p', {}, rich('이 단계의 콘텐츠는 아직 만들어지지 않았습니다. 지금은 **LEVEL 1~30**을 플레이할 수 있습니다.')),
+        el('p', {}, rich('이 단계의 콘텐츠는 아직 만들어지지 않았습니다. 지금은 **LEVEL 1~35**를 플레이할 수 있습니다.')),
         button('스테이지 지도로', () => app.go('/map'), { variant: 'primary' }),
       ),
     ));
@@ -423,6 +427,8 @@ function problemView(app, stage, step, handlers) {
   const feedback = el('div', { class: 'feedback' });
   const panel = makeBoardPanel({ size, onClick: (idx) => onClick(idx) });
   panel.view.setBoard(session.board).setView('auto').setGhostColor(session.userColor);
+  // 자동화 테스트가 진행 중인 문제 상태를 읽을 수 있게 해 두는 연결고리
+  panel.canvas.__problemSession = session;
   // 문제를 푸는 동안 판이 흔들리지 않도록 화면 범위를 고정한다.
   // 정답 자리가 시작 국면 바깥일 수 있으므로 여유를 넉넉히 둔다.
   const fixedView = expandView(panel.view.autoView(), size, 2);

@@ -174,23 +174,52 @@ export function canCapture(board, target, attacker, opts = {}) {
   if (defender === EMPTY || defender === attacker) {
     return { captured: false, move: null, nodes: 0, truncated: false };
   }
-  const state = { nodes: 0, maxNodes, truncated: false, memo: new Map() };
-  const anchorStones = board.group(target).stones;
-  const zone = neighborhood(board, anchorStones, opts.radius || 2);
+  const state = { nodes: 0, maxNodes, truncated: false, memo: new Map(), radius: opts.radius || 2 };
   let best = null;
-  for (const move of orderedMoves(board, target, attacker, zone)) {
+  for (const move of orderedMoves(board, target, attacker, zoneFor(board, target, state))) {
     const probe = board.clone();
     const r = probe.play(attacker, move);
     if (!r.ok) continue;
     if (probe.cells[target] === EMPTY) { best = move; break; }
-    if (defenderSurvives(probe, target, attacker, defender, maxDepth - 1, zone, state)) continue;
+    if (defenderSurvives(probe, target, attacker, defender, maxDepth - 1, state)) continue;
     best = move;
     break;
   }
   return { captured: best !== null, move: best, nodes: state.nodes, truncated: state.truncated };
 }
 
-function defenderSurvives(board, target, attacker, defender, depth, zone, state) {
+/**
+ * "지금 살아날 수 있는가" — **달아나는 쪽 차례**로 판정한다.
+ *
+ * canCapture는 "잡는 쪽 차례"를 가정하므로, 내가 방금 한 수를 둔 직후의 국면에
+ * 그대로 쓰면 나에게 두 수를 연속으로 주는 셈이 되어 판정이 후해진다.
+ * 착수 직후에 "이 돌이 잡혔는가"를 물을 때는 반드시 이 함수를 쓴다.
+ */
+export function defenderCanEscape(board, target, attacker, opts = {}) {
+  const defender = board.cells[target];
+  if (defender === EMPTY) return false;          // 이미 들려 나갔다
+  if (defender === attacker) return true;
+  const state = {
+    nodes: 0,
+    maxNodes: opts.maxNodes || 40000,
+    truncated: false,
+    memo: new Map(),
+    radius: opts.radius || 2,
+  };
+  return defenderSurvives(board, target, attacker, defender, opts.maxDepth || 8, state);
+}
+
+/**
+ * 탐색 구역은 **매 국면 다시 계산한다.**
+ * 처음 한 번만 계산해 두면, 달아나는 돌이 그 구역을 벗어난 순간 둘 곳이 없어져
+ * 실제로는 편하게 도망친 돌을 "잡혔다"고 잘못 판정한다.
+ */
+function zoneFor(board, target, state) {
+  if (board.cells[target] === EMPTY) return [];
+  return neighborhood(board, board.group(target).stones, state.radius);
+}
+
+function defenderSurvives(board, target, attacker, defender, depth, state) {
   if (board.cells[target] === EMPTY) return false;
   const g = board.group(target);
   if (depth <= 0) { state.truncated = true; return true; }
@@ -201,22 +230,22 @@ function defenderSurvives(board, target, attacker, defender, depth, zone, state)
   if (state.memo.has(key)) return state.memo.get(key);
 
   let survives = false;
-  for (const move of orderedMoves(board, target, defender, zone)) {
+  for (const move of orderedMoves(board, target, defender, zoneFor(board, target, state))) {
     const probe = board.clone();
     const r = probe.play(defender, move);
     if (!r.ok) continue;
     if (probe.cells[target] !== defender) continue;
-    if (!attackerCaptures(probe, target, attacker, defender, depth - 1, zone, state)) { survives = true; break; }
+    if (!attackerCaptures(probe, target, attacker, defender, depth - 1, state)) { survives = true; break; }
   }
   if (!survives) {
     // 패스(다른 곳을 두는 것)로도 살 수 있는지: 상대가 못 잡으면 애초에 잡힌 게 아니다
-    if (!attackerCaptures(board, target, attacker, defender, depth - 1, zone, state, true)) survives = true;
+    if (!attackerCaptures(board, target, attacker, defender, depth - 1, state, true)) survives = true;
   }
   state.memo.set(key, survives);
   return survives;
 }
 
-function attackerCaptures(board, target, attacker, defender, depth, zone, state, defenderPassed = false) {
+function attackerCaptures(board, target, attacker, defender, depth, state, defenderPassed = false) {
   if (board.cells[target] === EMPTY) return true;
   if (depth <= 0) { state.truncated = true; return false; }
   if (++state.nodes > state.maxNodes) { state.truncated = true; return false; }
@@ -224,12 +253,12 @@ function attackerCaptures(board, target, attacker, defender, depth, zone, state,
   if (state.memo.has(key)) return state.memo.get(key);
 
   let captures = false;
-  for (const move of orderedMoves(board, target, attacker, zone)) {
+  for (const move of orderedMoves(board, target, attacker, zoneFor(board, target, state))) {
     const probe = board.clone();
     const r = probe.play(attacker, move);
     if (!r.ok) continue;
     if (probe.cells[target] === EMPTY) { captures = true; break; }
-    if (!defenderSurvives(probe, target, attacker, defender, depth - 1, zone, state)) { captures = true; break; }
+    if (!defenderSurvives(probe, target, attacker, defender, depth - 1, state)) { captures = true; break; }
   }
   state.memo.set(key, captures);
   return captures;
