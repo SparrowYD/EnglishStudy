@@ -37,6 +37,22 @@
   }
   .subtitle{ color: var(--muted); font-size: 12px; margin:0; }
 
+  /* ── 대국 설정 ───────────────────────────── */
+  .setup{
+    width:100%; max-width: 560px;
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+    margin-bottom: 10px;
+  }
+  .field{ display:flex; align-items:center; gap:6px; font-size:12.5px; color: var(--muted); }
+  .field.hidden{ display:none; }
+  select{
+    font: inherit; font-size: 13px; font-weight:600;
+    color: var(--text); background: var(--panel-2);
+    border: 1px solid #4a4034; border-radius: 8px;
+    padding: 7px 10px; cursor: pointer;
+  }
+  select:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
   /* ── 상태 표시 ───────────────────────────── */
   .status-bar{
     width: 100%;
@@ -101,6 +117,17 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
+  .board.thinking{ cursor: progress; }
+
+  /* 컴퓨터가 생각 중일 때 점 애니메이션 */
+  .thinking-dot{
+    display:inline-block; width:5px; height:5px; border-radius:50%;
+    background: var(--accent); margin-left:3px;
+    animation: blink 1s infinite;
+  }
+  .thinking-dot:nth-child(2){ animation-delay: .16s; }
+  .thinking-dot:nth-child(3){ animation-delay: .32s; }
+  @keyframes blink{ 0%,60%,100%{ opacity:.25; } 30%{ opacity:1; } }
   .line{ position:absolute; background: #6b4a22; opacity:.85; }
   .line.h{ height:1px; left: calc(100% / 30); width: calc(100% - 100% / 15); }
   .line.v{ width:1px; top: calc(100% / 30); height: calc(100% - 100% / 15); }
@@ -243,6 +270,28 @@
   <h1>오목 · Gomoku</h1>
   <p class="subtitle">15×15 · 흑 선공 · 흑돌 3-3 금수 적용</p>
 </header>
+
+<div class="setup">
+  <label class="field">대국
+    <select id="selMode">
+      <option value="pvc" selected>컴퓨터와 대국</option>
+      <option value="pvp">2인 대국</option>
+    </select>
+  </label>
+  <label class="field" id="fieldColor">내 돌
+    <select id="selColor">
+      <option value="1" selected>흑 (선공)</option>
+      <option value="2">백 (후공)</option>
+    </select>
+  </label>
+  <label class="field" id="fieldLevel">난이도
+    <select id="selLevel">
+      <option value="easy">쉬움</option>
+      <option value="normal" selected>보통</option>
+      <option value="hard">어려움</option>
+    </select>
+  </label>
+</div>
 
 <div class="status-bar">
   <div class="turn" id="turnIndicator">
@@ -571,6 +620,219 @@ if (typeof module !== 'undefined' && module.exports) {
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
+     컴퓨터 대전 AI (DOM 의존 없음) — 단위 테스트 가능
+     ══════════════════════════════════════════════════════════════ -->
+<script id="gomoku-ai">
+'use strict';
+
+/** 위협의 가치. 위로 갈수록 결정적인 수. */
+const AI_SCORE = {
+  FIVE:         10000000,   // 5목 완성 — 즉시 승리
+  OPEN_FOUR:     1000000,   // 열린 4 — 막을 수 없음(다음 수 승리 확정)
+  DOUBLE_FOUR:    800000,   // 4-4
+  FOUR_THREE:     600000,   // 4-3
+  DOUBLE_THREE:   300000,   // 3-3 (백만 가능)
+  FOUR:            60000,   // 단순 4 — 막지 않으면 짐
+  OPEN_THREE:      30000,   // 열린 3
+};
+
+/** 방어 가중치 — 1보다 크게 두어 동급 위협에서는 막는 쪽을 택한다. */
+const DEF_WEIGHT = { easy: 0.6, normal: 1.15, hard: 1.15 };
+
+function opponentOf(color) {
+  return color === BLACK ? WHITE : BLACK;
+}
+
+/**
+ * (r,c)에 color가 놓인 상태에서, 이 방향으로 한 수 더 두어
+ * 5목을 만들 수 있는 지점의 개수.
+ *   2 이상 → 열린 4 (막아도 반대쪽으로 완성)
+ *   1      → 단순 4 (그 지점을 막으면 저지 가능)
+ */
+function countFivePoints(board, r, c, dr, dc, color) {
+  let n = 0;
+  for (let i = -4; i <= 4; i++) {
+    if (i === 0) continue;
+    const qr = r + dr * i, qc = c + dc * i;
+    if (!inBounds(qr, qc) || board[qr][qc] !== EMPTY) continue;
+
+    board[qr][qc] = color;
+    if (lineRun(board, qr, qc, dr, dc).length >= 5) n++;
+    board[qr][qc] = EMPTY;
+  }
+  return n;
+}
+
+/** 4 미만의 연결 형태에 주는 기본 점수 (길이 × 열린 끝 개수) */
+function shapeScore(board, r, c, dr, dc) {
+  const run = lineRun(board, r, c, dr, dc);
+  const open = (run.before.empty ? 1 : 0) + (run.after.empty ? 1 : 0);
+  if (open === 0) return 0;
+  const table = { 1: [0, 6, 24], 2: [0, 60, 320], 3: [0, 320, 2200] };
+  const row = table[run.length];
+  return row ? row[open] : 0;
+}
+
+/** (r,c)에 color를 두었을 때 만들어지는 위협의 가치 */
+function threatScore(board, r, c, color) {
+  board[r][c] = color;
+
+  if (checkWin(board, r, c)) {
+    board[r][c] = EMPTY;
+    return AI_SCORE.FIVE;
+  }
+
+  let openFours = 0, fours = 0, openThrees = 0, shape = 0;
+  for (const [dr, dc] of DIRECTIONS) {
+    const fivePoints = countFivePoints(board, r, c, dr, dc, color);
+    if (fivePoints >= 2) openFours++;
+    else if (fivePoints === 1) fours++;
+
+    if (isOpenThree(board, r, c, [dr, dc], color)) openThrees++;
+    shape += shapeScore(board, r, c, dr, dc);
+  }
+
+  board[r][c] = EMPTY;
+
+  const fourCount = openFours + fours;
+  let score = shape;
+  if (openFours > 0)                            score += AI_SCORE.OPEN_FOUR;
+  else if (fourCount >= 2)                      score += AI_SCORE.DOUBLE_FOUR;
+  else if (fourCount >= 1 && openThrees >= 1)   score += AI_SCORE.FOUR_THREE;
+  else if (openThrees >= 2)                     score += AI_SCORE.DOUBLE_THREE;
+  else if (fourCount === 1)                     score += AI_SCORE.FOUR;
+  else if (openThrees === 1)                    score += AI_SCORE.OPEN_THREE;
+  return score;
+}
+
+/** 기존 돌 주변(반경 radius)의 빈 칸만 후보로 삼는다. 흑이면 금수는 제외. */
+function candidateMoves(board, color, radius = 2) {
+  const near = Array.from({ length: SIZE }, () => new Array(SIZE).fill(false));
+  let hasStone = false;
+
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (board[r][c] === EMPTY) continue;
+      hasStone = true;
+      for (let dr = -radius; dr <= radius; dr++) {
+        for (let dc = -radius; dc <= radius; dc++) {
+          const nr = r + dr, nc = c + dc;
+          if (inBounds(nr, nc) && board[nr][nc] === EMPTY) near[nr][nc] = true;
+        }
+      }
+    }
+  }
+
+  if (!hasStone) return [{ r: 7, c: 7 }];   // 첫 수는 천원
+
+  const moves = [];
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if (near[r][c] && !isForbidden(board, r, c, color)) moves.push({ r, c });
+    }
+  }
+
+  // 주변에 둘 곳이 없으면 판 전체에서 합법적인 빈 칸을 찾는다.
+  if (moves.length === 0) {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (board[r][c] === EMPTY && !isForbidden(board, r, c, color)) moves.push({ r, c });
+      }
+    }
+  }
+  return moves;
+}
+
+/** 후보 수를 공격 + 방어 점수로 평가해 내림차순 정렬 */
+function rankedMoves(board, color, defWeight) {
+  const opp = opponentOf(color);
+
+  const scored = candidateMoves(board, color).map(m => {
+    const attack = threatScore(board, m.r, m.c, color);
+
+    // 상대가 흑이고 그 자리가 3-3 금수라면 상대는 둘 수 없으므로 막을 가치가 없다.
+    const oppCanPlay = !(opp === BLACK && isDoubleThree(board, m.r, m.c));
+    const defense = oppCanPlay ? threatScore(board, m.r, m.c, opp) : 0;
+
+    const center = 10 - (Math.abs(m.r - 7) + Math.abs(m.c - 7));
+    return { ...m, attack, defense, score: attack + defWeight * defense + center };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored;
+}
+
+/**
+ * 컴퓨터의 착수 선택.
+ *   easy   — 결정적인 수(5목 완성/저지)만 챙기고 나머지는 느슨하게
+ *   normal — 공격 + 방어 점수가 가장 높은 수
+ *   hard   — 거기에 상대의 최선 응수까지 한 수 더 읽는다
+ */
+function chooseAiMove(board, color, level = 'normal', rng = Math.random) {
+  const moves = rankedMoves(board, color, DEF_WEIGHT[level] ?? DEF_WEIGHT.normal);
+  if (moves.length === 0) return null;
+
+  // 이길 수 있으면 무조건 이긴다 (방어 가중치보다 우선)
+  const winning = moves.find(m => m.attack >= AI_SCORE.FIVE);
+  if (winning) return winning;
+
+  if (level === 'easy') {
+    // 상대의 5목만 막고, 그 외에는 상위 후보 중에서 무작위로 고른다
+    if (moves[0].score >= AI_SCORE.FIVE * 0.5) return moves[0];
+    const pool = moves.slice(0, Math.min(5, moves.length));
+    return pool[Math.floor(rng() * pool.length)];
+  }
+
+  if (level === 'normal') {
+    const best = moves[0].score;
+    const ties = moves.filter(m => m.score >= best - 1);
+    return ties[Math.floor(rng() * ties.length)];
+  }
+
+  // hard — 상위 후보마다 두어 보고, 상대의 반격까지 한 수 더 읽는다
+  const opp = opponentOf(color);
+  let bestMove = moves[0], bestValue = -Infinity;
+
+  for (const m of moves.slice(0, 10)) {
+    board[m.r][m.c] = color;
+
+    // 상대가 '막을 수 있다'는 사실은 감점 요소가 아니다. 막기는 무력화일 뿐이므로
+    // 상대가 만들어 낼 수 있는 공격(attack)의 최댓값만 위험으로 계산한다.
+    const replies = rankedMoves(board, opp, DEF_WEIGHT.hard);
+    let oppAttack = 0;
+    for (const reply of replies) {
+      if (reply.attack > oppAttack) oppAttack = reply.attack;
+    }
+
+    // 상대가 최선으로 받은 뒤에도 내가 이어 갈 공격이 남는가.
+    // 이 항이 있어야 상대의 응수를 강요하면서 4-3 같은 복합 위협을 쌓아 간다.
+    let followUp = 0;
+    if (replies.length) {
+      const reply = replies[0];
+      board[reply.r][reply.c] = opp;
+      for (const next of rankedMoves(board, color, DEF_WEIGHT.hard)) {
+        if (next.attack > followUp) followUp = next.attack;
+      }
+      board[reply.r][reply.c] = EMPTY;
+    }
+
+    board[m.r][m.c] = EMPTY;
+
+    const value = m.score - 0.9 * oppAttack + followUp;
+    if (value > bestValue) { bestValue = value; bestMove = m; }
+  }
+  return bestMove;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    AI_SCORE, DEF_WEIGHT, opponentOf, countFivePoints, shapeScore,
+    threatScore, candidateMoves, rankedMoves, chooseAiMove,
+  };
+}
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
      UI / 게임 진행
      ══════════════════════════════════════════════════════════════ -->
 <script>
@@ -584,13 +846,27 @@ const messageEl   = document.getElementById('message');
 const moveCountEl = document.getElementById('moveCount');
 const btnUndo     = document.getElementById('btnUndo');
 
+const selMode  = document.getElementById('selMode');
+const selColor = document.getElementById('selColor');
+const selLevel = document.getElementById('selLevel');
+
 /* ── 게임 상태 ─────────────────────────────── */
 let board;                    // 15×15 배열
 let current;                  // 현재 차례
 let history;                  // 착수 순서 기록: [{ r, c, color, index }]
 let gameOver;
 let winInfo;                  // { color, cells } | null
+let thinking = false;         // 컴퓨터가 수를 고르는 중
 const stoneEls = new Map();   // "r,c" → 돌 DOM 요소
+
+/* ── 대국 설정 ─────────────────────────────── */
+let mode       = 'pvc';       // 'pvc' 컴퓨터와 대국 | 'pvp' 2인 대국
+let humanColor = BLACK;       // 컴퓨터와 둘 때 사람이 잡는 돌
+let level      = 'normal';
+
+const isAiTurn    = () => mode === 'pvc' && !gameOver && current !== humanColor;
+const sideLabel   = color => color === BLACK ? '흑' : '백';
+const playerLabel = color => mode === 'pvc' ? (color === humanColor ? ' (나)' : ' (컴퓨터)') : '';
 
 /* ── 판 그리기 ─────────────────────────────── */
 const pos = i => `calc(${(i + 0.5)} * 100% / 15)`;
@@ -668,20 +944,47 @@ function setMessage(text, kind) {
 
 function updateStatus() {
   moveCountEl.textContent = history.length + ' 수';
-  btnUndo.disabled = history.length === 0;
+  btnUndo.disabled = history.length === 0 || thinking;
+  boardEl.classList.toggle('thinking', thinking);
 
   if (gameOver && winInfo) {
     turnDotEl.className = 'dot ' + (winInfo.color === BLACK ? 'black' : 'white');
-    turnTextEl.textContent = (winInfo.color === BLACK ? '흑' : '백') + ' 승리';
+    turnTextEl.textContent = sideLabel(winInfo.color) + ' 승리' + playerLabel(winInfo.color);
     turnWrapEl.classList.add('win');
   } else if (gameOver) {
     turnTextEl.textContent = '무승부';
     turnWrapEl.classList.add('win');
   } else {
     turnDotEl.className = 'dot ' + (current === BLACK ? 'black' : 'white');
-    turnTextEl.textContent = current === BLACK ? '흑 차례' : '백 차례';
+    turnTextEl.textContent = sideLabel(current) + ' 차례' + playerLabel(current);
     turnWrapEl.classList.remove('win');
   }
+}
+
+/** 컴퓨터 차례면 잠시 뒤 착수한다. */
+function maybeAiMove() {
+  if (!isAiTurn() || thinking) return;
+
+  thinking = true;
+  updateStatus();
+  messageEl.className = 'message';
+  messageEl.innerHTML =
+    '컴퓨터가 생각 중<span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span>';
+
+  // 화면이 먼저 갱신되도록 한 박자 쉰 뒤 계산한다.
+  setTimeout(() => {
+    const move = chooseAiMove(board, current, level);
+    thinking = false;
+
+    if (!move) {                       // 둘 곳이 없다 (흑이 전부 금수인 극단적 상황)
+      gameOver = true;
+      winInfo = null;
+      updateStatus();
+      setMessage('컴퓨터가 둘 수 있는 자리가 없습니다. 무승부입니다.', 'win');
+      return;
+    }
+    placeStone(move.r, move.c);
+  }, 180);
 }
 
 /* ── 게임 진행 ─────────────────────────────── */
@@ -717,27 +1020,28 @@ function placeStone(r, c) {
     gameOver = true;
     winInfo = win;
     highlightWin(win.cells);
-    setMessage((win.color === BLACK ? '흑' : '백') + ' 승리! 🎉', 'win');
+    const who = mode === 'pvc'
+      ? (win.color === humanColor ? ' — 내가 이겼습니다!' : ' — 컴퓨터가 이겼습니다.')
+      : ' 🎉';
+    setMessage(sideLabel(win.color) + ' 승리' + who, 'win');
   } else if (history.length === SIZE * SIZE) {
     gameOver = true;
     winInfo = null;
     setMessage('무승부입니다.', 'win');
   } else {
     current = current === BLACK ? WHITE : BLACK;
-    setMessage(current === BLACK ? '흑 차례입니다.' : '백 차례입니다.');
+    setMessage(sideLabel(current) + ' 차례입니다.');
   }
 
   updateStatus();
+  maybeAiMove();
   return true;
 }
 
-/** 무르기 — 마지막 한 수를 되돌린다. */
-function undoMove() {
+/** 한 수만 되돌리는 내부 헬퍼 */
+function undoOne() {
   const last = history.pop();
-  if (!last) {
-    setMessage('되돌릴 수가 없습니다.', 'error');
-    return false;
-  }
+  if (!last) return null;
 
   board[last.r][last.c] = EMPTY;
   const el = stoneEls.get(last.r + ',' + last.c);
@@ -748,10 +1052,35 @@ function undoMove() {
   gameOver = false;
   winInfo  = null;
   current  = last.color;
+  return last;
+}
+
+/**
+ * 무르기.
+ * 컴퓨터와 둘 때는 내 차례가 돌아올 때까지(=컴퓨터의 응수까지) 되돌린다.
+ */
+function undoMove() {
+  if (thinking) return false;
+
+  const last = undoOne();
+  if (!last) {
+    setMessage('되돌릴 수가 없습니다.', 'error');
+    return false;
+  }
+
+  let undone = 1;
+  while (mode === 'pvc' && current !== humanColor && history.length > 0) {
+    undoOne();
+    undone++;
+  }
 
   updateLastMarker();
   updateStatus();
-  setMessage(`${last.index}수(${last.color === BLACK ? '흑' : '백'})를 물렀습니다.`);
+  setMessage(mode === 'pvc' && undone > 1
+    ? `${undone}수를 물렀습니다. 다시 두세요.`
+    : `${last.index}수(${sideLabel(last.color)})를 물렀습니다.`);
+
+  maybeAiMove();   // 첫 수를 물러 컴퓨터(흑)가 다시 두어야 하는 경우
   return true;
 }
 
@@ -762,23 +1091,49 @@ function resetGame() {
   history  = [];
   gameOver = false;
   winInfo  = null;
+  thinking = false;
 
   stoneEls.forEach(el => el.remove());
   stoneEls.clear();
   document.querySelectorAll('.forbidden-mark').forEach(e => e.remove());
 
   updateStatus();
-  setMessage('새 게임을 시작합니다. 흑 차례입니다.');
+  setMessage(mode === 'pvc'
+    ? `컴퓨터와 대국을 시작합니다. 나는 ${sideLabel(humanColor)}입니다.`
+    : '새 게임을 시작합니다. 흑 차례입니다.');
+
+  maybeAiMove();   // 사람이 백이면 컴퓨터(흑)가 먼저 둔다
 }
 
 /* ── 입력 ─────────────────────────────────── */
 boardEl.addEventListener('click', (e) => {
+  if (thinking) return;
+  if (isAiTurn()) {                       // 컴퓨터 차례에는 사람이 둘 수 없다
+    setMessage('컴퓨터 차례입니다.', 'error');
+    return;
+  }
+
   const rect = boardEl.getBoundingClientRect();
   const cell = rect.width / SIZE;
   const c = Math.floor((e.clientX - rect.left) / cell);
   const r = Math.floor((e.clientY - rect.top) / cell);
   if (inBounds(r, c)) placeStone(r, c);
 });
+
+/* ── 대국 설정 ─────────────────────────────── */
+function applySettings() {
+  mode       = selMode.value;
+  humanColor = Number(selColor.value);
+  level      = selLevel.value;
+
+  const pvp = mode === 'pvp';
+  document.getElementById('fieldColor').classList.toggle('hidden', pvp);
+  document.getElementById('fieldLevel').classList.toggle('hidden', pvp);
+
+  resetGame();   // 설정이 바뀌면 새 판으로 시작한다
+}
+
+[selMode, selColor, selLevel].forEach(el => el.addEventListener('change', applySettings));
 
 document.getElementById('btnReset').addEventListener('click', resetGame);
 btnUndo.addEventListener('click', undoMove);
@@ -808,7 +1163,7 @@ document.getElementById('btnTest').addEventListener('click', () => {
 
 /* ── 시작 ─────────────────────────────────── */
 drawGrid();
-resetGame();
+applySettings();
 </script>
 
 </body>
