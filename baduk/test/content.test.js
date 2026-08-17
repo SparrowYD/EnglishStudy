@@ -13,7 +13,7 @@ const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4];
 
 test('구현된 LEVEL은 1번부터 빠짐없이 이어진다', () => {
   assert.deepEqual(LEVELS.map((l) => l.id), Array.from({ length: LEVELS.length }, (_, i) => i + 1));
-  assert.ok(LEVELS.length >= 35, `구현된 LEVEL이 ${LEVELS.length}개뿐입니다`);
+  assert.ok(LEVELS.length >= 40, `구현된 LEVEL이 ${LEVELS.length}개뿐입니다`);
 });
 
 test('모든 LEVEL과 문제가 검증을 통과한다', () => {
@@ -26,7 +26,7 @@ test('모든 LEVEL과 문제가 검증을 통과한다', () => {
   for (const p of problems) {
     assert.deepEqual(p.errors, [], `${p.ctx} ${p.id}`);
   }
-  assert.ok(problems.length >= 140, `문제 수가 ${problems.length}개뿐입니다`);
+  assert.ok(problems.length >= 160, `문제 수가 ${problems.length}개뿐입니다`);
 });
 
 test('모든 문제에 정답이 존재하고, 정답을 두면 실제로 정답 처리된다', () => {
@@ -112,7 +112,7 @@ test('힌트는 단계적으로 나오고, 정답 보기는 좌표와 설명을 
 
 test('공식 카드는 네 단계(공식·왜·언제·예외)를 모두 갖춘다 (요구사항 51)', () => {
   const withFormula = LEVELS.filter((l) => l.formula);
-  assert.ok(withFormula.length >= 22, '공식 카드가 너무 적습니다');
+  assert.ok(withFormula.length >= 26, '공식 카드가 너무 적습니다');
   for (const lv of withFormula) {
     for (const key of ['statement', 'why', 'when', 'exception']) {
       assert.ok(lv.formula[key] && lv.formula[key].length > 10,

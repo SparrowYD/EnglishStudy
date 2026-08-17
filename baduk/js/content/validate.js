@@ -7,7 +7,7 @@
  */
 
 import { BLACK, WHITE, EMPTY, fromLabel, toLabel } from '../engine/board.js';
-import { buildPosition, findSolutions, evaluateGoal } from '../game/problem.js';
+import { buildPosition, findSolutions, evaluateGoal, ProblemSession } from '../game/problem.js';
 import { STEP } from '../game/stage.js';
 
 /** 문제 하나를 검사한다. @returns {{id, ok, errors:string[], solutions:string[]}} */
@@ -58,6 +58,24 @@ export function validateProblem(problem, ctx = '') {
 
   solutions = findSolutions(problem, board, color, size);
   if (solutions.length === 0) errors.push('목표를 달성하는 수가 하나도 없습니다.');
+
+  // 여러 수에 걸친 문제(축·촉촉수·환격 등)는 첫 수가 있다고 끝나는 것이 아니다.
+  // 채점기와 똑같은 방식으로 끝까지 풀어 보고, 실제로 완료되는지 확인한다.
+  if (problem.progressGoal && solutions.length > 0) {
+    const session = new ProblemSession(problem, { allowHints: false });
+    const line = [];
+    let stuck = false;
+    for (let guard = 0; guard < (problem.maxMoves || 12) + 2 && !session.solved; guard++) {
+      const next = findSolutions(problem, session.board, session.userColor, size);
+      if (next.length === 0) { stuck = true; break; }
+      const res = session.play(next[0]);
+      line.push(label(next[0]));
+      if (res.verdict !== 'correct') { stuck = true; break; }
+    }
+    if (stuck || !session.solved) {
+      errors.push(`끝까지 풀리지 않습니다(${line.join(' ') || '첫 수부터'} 이후 막힘).`);
+    }
+  }
 
   // 'point' 목표의 정답 좌표는 실제로 둘 수 있어야 한다
   if (problem.goal?.type === 'point') {

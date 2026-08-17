@@ -338,6 +338,32 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
         ? { achieved: false, reason: 'alive' }
         : { achieved: true };
     }
+    case 'reduce': {
+      // "상대 활로를 실제로 줄였는가" — 먹여치기처럼 단수까지는 못 가지만
+      // 활로를 하나씩 줄여 가는 수를 채점할 때 쓴다. initial 대비로 비교한다.
+      const targets = (goal.targets || []).map(idxOf);
+      for (const t of targets) {
+        if (board.cells[t] === EMPTY) return { achieved: true };  // 아예 잡았다
+        if (initial.cells[t] === EMPTY) continue;
+        const before = initial.group(t).liberties.length;
+        const now = board.group(t).liberties.length;
+        if (now >= before) return { achieved: false, reason: 'not-reduced' };
+      }
+      return { achieved: true };
+    }
+    case 'capturable': {
+      // "내 차례에 아직 잡을 수 있는가" — 상대 응수 뒤(=내 차례)에 쓰는 진행 조건.
+      // 착수 직후(=상대 차례)에 쓰는 'capture'와 차례가 반대이므로 함수도 다르다.
+      const targets = (goal.targets || []).map(idxOf);
+      for (const t of targets) {
+        if (board.cells[t] === EMPTY || board.cells[t] === color) continue;
+        const r = canCapture(board, t, color, {
+          maxDepth: goal.depth || 8, maxNodes: goal.maxNodes || 30000,
+        });
+        if (!r.captured) return { achieved: false, reason: 'escaped' };
+      }
+      return { achieved: true };
+    }
     case 'ladder': {
       // 축이 아직 성립하는가. 잡는 쪽 차례일 때 판정해야 의미가 맞다.
       const t = idxOf(goal.target != null ? goal.target : (goal.targets || [])[0]);
@@ -684,6 +710,7 @@ export function bestResistance(board, color, problem) {
     else stones.push(a);
   }
   if (stones.length) for (const p of neighborhood(board, stones, 2)) candidates.add(p);
+  const anchorStones = stones;
 
   let best = -1;
   let bestScore = -Infinity;
@@ -694,16 +721,25 @@ export function bestResistance(board, color, problem) {
     if (!res.ok) continue;
 
     let s = 0;
-    // 1) 잡히기 직전인 내 돌은 일단 뻗고 본다 — 결국 잡히는 축이라도 그것이 유일한 저항이다.
-    //    이것을 빠뜨리면 축 도중에 엉뚱한 곳으로 손을 빼서 수순이 어긋난다.
+    // 1) 잡히기 직전인 내 돌을 어떻게든 건사한다.
+    //    (a) 활로로 뻗기 — 결국 잡히는 축이라도 그것이 유일한 저항이다.
+    //    (b) 상대 돌을 따내어 활로를 되찾기 — 환격이 성립하는지 확인하려면 이쪽도 두어 봐야 한다.
+    //    둘 중 하나라도 해당하면 큰 점수를 준다. (a)만 보면 축이 어긋나고,
+    //    (b)만 보면 가장자리 축에서 뻗는 수를 놓친다.
     for (const g of myAtari) {
-      if (g.liberties[0] === p) s += 180 + 10 * g.stones.length + 15 * probe.libertyCount(p);
+      const extended = g.liberties[0] === p;
+      const rescued = probe.cells[g.stones[0]] === color && probe.libertyCount(g.stones[0]) >= 2;
+      if (extended || rescued) s += 180 + 10 * g.stones.length + 15 * probe.libertyCount(p);
     }
     // 2) 나를 몰던 돌을 되따내는 것도 훌륭한 저항이다
     s += res.captured.length * 60;
     // 3) 사용자의 목표를 아직 막고 있는가
     if (!evaluateGoal(problem, board, probe, user, size).achieved) s += 100;
-    // 4) 나머지가 같다면 활로가 많은 쪽
+    // 4) 나머지가 같다면 국지적으로 버티는 수를 고른다.
+    //    이미 죽은 돌 옆에서 엉뚱하게 먼 곳을 두면 학습자에게 수순이 어지럽게 보인다.
+    for (const a of anchorStones) {
+      if (board.neighbors(a).includes(p)) { s += 6; break; }
+    }
     if (probe.cells[p] === color) s += probe.libertyCount(p);
     if (res.captured.length === 0 && probe.cells[p] === color && probe.libertyCount(p) <= 1) s -= 120;
 
