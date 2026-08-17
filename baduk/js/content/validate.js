@@ -8,6 +8,7 @@
 
 import { BLACK, WHITE, EMPTY, fromLabel, toLabel } from '../engine/board.js';
 import { buildPosition, findSolutions, evaluateGoal, ProblemSession } from '../game/problem.js';
+import { eyeRegion } from '../engine/tsumego.js';
 import { STEP } from '../game/stage.js';
 
 /** 문제 하나를 검사한다. @returns {{id, ok, errors:string[], solutions:string[]}} */
@@ -49,6 +50,19 @@ export function validateProblem(problem, ctx = '') {
   }
 
   const color = problem.toPlay || BLACK;
+
+  // 사활 목표(live/kill)는 무리가 **완전히 둘러싸여 있어야** 정확히 판정된다.
+  // 밖으로 트여 있으면 완전탐색이 물러서고 국지 탐색이 대신 답하는데,
+  // 그 답은 틀릴 수 있고 느리기까지 하다. 그런 국면은 애초에 만들지 않는다.
+  if (problem.goal && (problem.goal.type === 'live' || problem.goal.type === 'kill')) {
+    const g = typeof problem.goal.group === 'number'
+      ? problem.goal.group : fromLabel(problem.goal.group, size);
+    if (g < 0 || board.cells[g] === EMPTY) {
+      errors.push('사활 목표의 group 좌표에 돌이 없습니다.');
+    } else if (!eyeRegion(board, g)) {
+      errors.push('사활 목표인데 무리가 완전히 둘러싸여 있지 않습니다(궁도가 바깥으로 트여 있음).');
+    }
+  }
 
   // 시작 국면에서 이미 목표가 달성되어 있으면 문제가 되지 않는다
   if (problem.goal && problem.goal.type !== 'point') {

@@ -17,7 +17,7 @@ import {
   canCapture, defenderCanEscape, readLadder, isSelfAtari, isTrueEye, eyeCount,
   isSafelyConnected, isConnected, canConnectNow, groupsInAtari, neighborhood,
 } from '../engine/analysis.js';
-import { survives } from '../engine/tsumego.js';
+import { survives, eyeRegion } from '../engine/tsumego.js';
 
 export const VERDICT = {
   CORRECT: 'correct',   // 목표 달성
@@ -231,6 +231,21 @@ export class ProblemSession {
  * ------------------------------------------------------------------ */
 
 /**
+ * 완전탐색이 물러섰을 때 쓰는 국지 탐색의 예산.
+ *
+ * 둘러싸이지 않은 무리에 사활 목표를 걸면 국지 탐색이 그대로 돌아가는데,
+ * 무리가 크면 탐색 구역이 넓어져 한 수를 채점하는 데만 몇 초씩 걸린다.
+ * 후보수마다 이것을 반복하면 힌트 한 번에 1분이 든다.
+ * 그래서 무리 크기에 반비례하게 예산을 줄인다 — 정확도보다 응답 속도를 택한다.
+ * (애초에 그런 국면은 콘텐츠 검증기가 "닫힌 사활 문제가 아니다"라고 잡아낸다.)
+ */
+function fallbackBudget(board, group, goal) {
+  const n = board.cells[group] === EMPTY ? 1 : board.group(group).stones.length;
+  if (n <= 3) return { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 40000 };
+  return { maxDepth: goal.depth || 6, maxNodes: goal.maxNodes || 8000 };
+}
+
+/**
  * 문제의 goal이 달성되었는지 규칙 엔진으로 판정한다.
  * @returns {{achieved:boolean, reason?:string}}
  */
@@ -332,7 +347,7 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
       }
       // 둘러싸인 모양이면 완전탐색으로 정확히 판정하고, 아니면 국지 탐색으로 넘어간다.
       const alive = survives(board, g, enemy, () => !canCapture(
-        board, g, enemy, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 },
+        board, g, enemy, fallbackBudget(board, g, goal),
       ).captured);
       return alive ? { achieved: true } : { achieved: false, reason: 'killed' };
     }
@@ -341,7 +356,7 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
       if (board.cells[g] === EMPTY) return { achieved: true };
       // 착수 직후 = 상대 차례. 상대가 살릴 수 있으면 아직 잡은 것이 아니다.
       const alive = survives(board, g, enemy, () => defenderCanEscape(
-        board, g, color, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 },
+        board, g, color, fallbackBudget(board, g, goal),
       ));
       return alive ? { achieved: false, reason: 'alive' } : { achieved: true };
     }
@@ -695,6 +710,14 @@ function solutionZone(problem, board, size) {
     // 빈 반면이면(LEVEL 1·2처럼 "아무 데나 두어 보세요") 반면 전체가 후보다
     if (anchors.length === 0) return Array.from({ length: board.length }, (_, i) => i);
   }
+  // 사활 문제에서 무리가 완전히 둘러싸여 있으면 답은 궁도 안(또는 바로 옆)에 있다.
+  // 큰 무리 주위를 반경 3으로 훑으면 후보가 수백 개가 되고, 그 하나하나를
+  // 다시 사활 판정에 넣게 되어 힌트·정답 보기가 눈에 띄게 느려진다.
+  if ((goal.type === 'live' || goal.type === 'kill') && anchors.length === 1 && !problem.searchRadius) {
+    const region = eyeRegion(board, anchors[0]);
+    if (region) return neighborhood(board, region, 1);
+  }
+
   const stones = [];
   for (const a of anchors) {
     if (board.cells[a] !== EMPTY) stones.push(...board.group(a).stones);
