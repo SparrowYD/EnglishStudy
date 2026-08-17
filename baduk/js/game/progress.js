@@ -240,7 +240,7 @@ export class Progress {
     r.due = Date.now() + r.interval * day;
     this.state.reviews[problemId] = r;
     this.save();
-    return r;
+    return { ...r };   // 저장된 객체를 그대로 넘기면 호출자가 이전 값과 비교할 수 없다
   }
 
   dueReviews(now = Date.now()) {

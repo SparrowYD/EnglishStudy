@@ -121,6 +121,41 @@ export class ProblemSession {
       return { ...result, reply, done: false };
     }
 
+    // 여러 수에 걸친 문제(축 수읽기 등)에서는 "아직 목표를 이루진 않았지만 잘 가고 있는 수"가 있다.
+    // progressGoal은 상대의 응수까지 둔 뒤에 판정한다 — 그래야 내 수가 정말 성립했는지 알 수 있다.
+    if (this.problem.progressGoal) {
+      const snapshot = { board: this.board.clone(), moves: this.moves.slice() };
+      this.board = after;
+      this.moves.push({ color: this.userColor, idx, verdict: 'progress' });
+      const reply = bestResistance(this.board, opposite(this.userColor), this.problem);
+      if (reply != null && reply >= 0) {
+        this.board.play(opposite(this.userColor), reply);
+        this.moves.push({ color: opposite(this.userColor), idx: reply, verdict: 'reply' });
+      }
+      const done = evaluateGoal(this.problem, this.initial, this.board, this.userColor, this.size);
+      if (done.achieved) {
+        this.solved = true;
+        return { verdict: VERDICT.CORRECT, message: this.problem.successMessage || '정답입니다!', reply, done: true };
+      }
+      const onTrack = evaluateGoal(
+        { ...this.problem, goal: this.problem.progressGoal }, this.initial, this.board, this.userColor, this.size,
+      );
+      if (onTrack.achieved) {
+        return { verdict: VERDICT.CORRECT, message: '좋습니다. 계속 이어 가세요.', reply, done: false };
+      }
+      // 어긋났으면 되돌리고 왜 안 되는지 알려 준다
+      this.board = snapshot.board;
+      this.moves = snapshot.moves;
+      this.wrongCount += 1;
+      return {
+        verdict: VERDICT.WRONG,
+        message: reason0(this.problem, before, after, idx, this.userColor, this.size),
+        detail: onTrack.reason === 'ladder-broken'
+          ? '이쪽으로 몰면 상대가 활로를 늘려 달아납니다. 반대쪽에서 몰아 보세요.'
+          : '이 수로는 끝까지 몰 수 없습니다.',
+      };
+    }
+
     this.wrongCount += 1;
     return result;
   }
@@ -272,6 +307,15 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
       const r = canCapture(board, g, color, { maxDepth: goal.depth || 10, maxNodes: goal.maxNodes || 60000 });
       return r.captured ? { achieved: true } : { achieved: false, reason: 'alive' };
     }
+    case 'ladder': {
+      // 축이 아직 성립하는가. 잡는 쪽 차례일 때 판정해야 의미가 맞다.
+      const t = idxOf(goal.target != null ? goal.target : (goal.targets || [])[0]);
+      if (t < 0) return { achieved: false, reason: 'no-target' };
+      if (board.cells[t] === EMPTY || board.cells[t] === color) return { achieved: true };
+      return readLadder(board, t, color).captured
+        ? { achieved: true }
+        : { achieved: false, reason: 'ladder-broken' };
+    }
     case 'liberties': {
       // "활로가 N개가 되는 곳에 두어라" — group을 적지 않으면 방금 둔 돌을 본다
       const g = goal.group != null ? idxOf(goal.group) : lastMoveOf(initial, board, color);
@@ -291,6 +335,12 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
     default:
       return { achieved: false, reason: 'unknown-goal' };
   }
+}
+
+/** progressGoal이 어긋났을 때 쓸 짧은 오답 문구. */
+function reason0(problem, before, after, move, color, size) {
+  const r = explainWrong({ problem, before, after, move, color, size, goalResult: { achieved: false } });
+  return r.headline;
 }
 
 function lastMoveOf(initial, board, color) {
@@ -590,14 +640,23 @@ export function bestResistance(board, color, problem) {
   for (const p of candidates) {
     if (p == null || p < 0 || board.cells[p] !== EMPTY) continue;
     const probe = board.clone();
-    if (!probe.play(color, p).ok) continue;
-    // 사용자의 목표가 아직 달성되지 않은 국면일수록 상대에게 좋은 수다
-    const achieved = evaluateGoal(problem, board, probe, user, size).achieved;
-    let s = achieved ? 0 : 100;
-    if (probe.cells[p] !== EMPTY) s += probe.libertyCount(p);
-    const captured = board.check(color, p);
-    if (captured.ok) s += captured.captures.length * 5;
-    if (isSelfAtari(board, color, p)) s -= 50;
+    const res = probe.play(color, p);
+    if (!res.ok) continue;
+
+    let s = 0;
+    // 1) 잡히기 직전인 내 돌은 일단 뻗고 본다 — 결국 잡히는 축이라도 그것이 유일한 저항이다.
+    //    이것을 빠뜨리면 축 도중에 엉뚱한 곳으로 손을 빼서 수순이 어긋난다.
+    for (const g of myAtari) {
+      if (g.liberties[0] === p) s += 180 + 10 * g.stones.length + 15 * probe.libertyCount(p);
+    }
+    // 2) 나를 몰던 돌을 되따내는 것도 훌륭한 저항이다
+    s += res.captured.length * 60;
+    // 3) 사용자의 목표를 아직 막고 있는가
+    if (!evaluateGoal(problem, board, probe, user, size).achieved) s += 100;
+    // 4) 나머지가 같다면 활로가 많은 쪽
+    if (probe.cells[p] === color) s += probe.libertyCount(p);
+    if (res.captured.length === 0 && probe.cells[p] === color && probe.libertyCount(p) <= 1) s -= 120;
+
     if (s > bestScore) { bestScore = s; best = p; }
   }
   return best;
