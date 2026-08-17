@@ -291,27 +291,58 @@ export function isConnected(board, a, b) {
  */
 export function isSafelyConnected(board, a, b, color = board.cells[a]) {
   if (isConnected(board, a, b)) return true;
+  if (board.cells[a] !== color || board.cells[b] !== color) return false;
   const enemy = opposite(color);
-  const cuts = cuttingPoints(board, a, b, color);
-  if (cuts.length === 0) return false;
-  for (const cut of cuts) {
+  const zone = connectionZone(board, a, b);
+  // 애초에 한 수로 이을 수 없다면 안전한 연결이라고 할 수 없다
+  if (!canConnectInOneMove(board, a, b, color, zone)) return false;
+
+  for (const cut of zone) {
+    if (board.cells[cut] !== EMPTY) continue;
     const probe = board.clone();
-    if (!probe.play(enemy, cut).ok) continue;
+    if (!probe.play(enemy, cut).ok) continue;   // 둘 수 없는 자리는 끊는 수가 되지 못한다
+    const zone2 = connectionZone(probe, a, b);
+    const replies = new Set([...zone, ...zone2]);
     let repaired = false;
-    for (const m of cuttingPoints(probe, a, b, color).concat(cuts)) {
+    for (const m of replies) {
       if (probe.cells[m] !== EMPTY) continue;
       const p2 = probe.clone();
       if (!p2.play(color, m).ok) continue;
-      if (isConnected(p2, a, b) && p2.libertyCount(a) > 1) { repaired = true; break; }
-    }
-    // 끊은 돌을 바로 잡아버리는 것도 연결의 한 방법이다
-    if (!repaired) {
-      const cutGroup = probe.cells[cut] === enemy ? cut : -1;
-      if (cutGroup >= 0 && canCapture(probe, cutGroup, color, { maxDepth: 4, maxNodes: 4000 }).captured) repaired = true;
+      if (p2.cells[a] !== color || p2.cells[b] !== color) continue;
+      if (isConnected(p2, a, b)) { repaired = true; break; }
+      // 끊은 돌을 따냈다면, 그 뒤에도 한 수로 이을 수 있으면 안전하다(호구가 이 경우다)
+      if (p2.cells[cut] === EMPTY && canConnectInOneMove(p2, a, b, color, replies)) { repaired = true; break; }
     }
     if (!repaired) return false;
   }
   return true;
+}
+
+/** 지금 한 수로 두 돌을 이을 수 있는가(끊음이 성립했는지 판정할 때 쓴다). */
+export function canConnectNow(board, a, b, color = board.cells[a]) {
+  if (board.cells[a] !== color || board.cells[b] !== color) return false;
+  if (isConnected(board, a, b)) return true;
+  return canConnectInOneMove(board, a, b, color, connectionZone(board, a, b));
+}
+
+function canConnectInOneMove(board, a, b, color, zone) {
+  for (const m of zone) {
+    if (board.cells[m] !== EMPTY) continue;
+    const probe = board.clone();
+    if (!probe.play(color, m).ok) continue;
+    if (probe.cells[a] === color && probe.cells[b] === color && isConnected(probe, a, b)) return true;
+  }
+  return false;
+}
+
+/** 두 돌의 연결에 관여할 수 있는 주변 점들. */
+function connectionZone(board, a, b) {
+  const stones = [];
+  for (const p of [a, b]) {
+    if (board.cells[p] !== EMPTY) stones.push(...board.group(p).stones);
+    else stones.push(p);
+  }
+  return neighborhood(board, stones, 1);
 }
 
 /** a와 b를 잇는 데 관여하는 빈 점들(둘 다에 인접하거나 사이에 낀 점). */
