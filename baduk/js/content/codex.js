@@ -104,6 +104,51 @@ const EXTRA = {
     pros: ['빠르면서도 사이로 들어온 돌이 자충이 되어 끊기지 않는다.'],
     mistakes: ['상대 돌이 이미 양옆에 있는데도 격언만 믿고 뛴다.'],
   },
+  '끼워 끊기': {
+    category: 'tactic',
+    pros: ['상대를 두 무리로 갈라 약한 쪽을 만들 수 있다. 공격은 대개 끊음에서 시작한다.'],
+    mistakes: ['호구 안쪽처럼 자충이 되는 자리에 끊어 한 점을 그냥 준다.', '끊어 놓고도 두 무리가 다 튼튼해 얻는 것이 없다.'],
+  },
+  '이음의 세 가지 방법': {
+    category: 'move',
+    pros: ['붙여 잇지 않고 호구·쌍립으로 이으면 같은 한 수로 더 넓게 자리를 잡는다.'],
+    mistakes: ['모양 이름만 믿고 끊어 보지 않는다.', '상대 돌이 늘어난 뒤에도 예전 호구를 안전하다고 여긴다.'],
+  },
+  '치중(置中)': {
+    category: 'life',
+    pros: ['궁도가 넓어 보이는 무리도 급소 한 수로 잡을 수 있다.'],
+    mistakes: ['직사궁·직오궁처럼 치중해도 사는 모양에 두어 돌만 잡힌다.', '칸 수만 세고 모양(한가운데가 있는지)을 보지 않는다.'],
+  },
+  '조임': {
+    category: 'tactic',
+    pros: ['상대가 순순히 응수할수록 상대가 나빠진다. 잡지 못하더라도 바깥이 두터워진다.'],
+    mistakes: ['잡히는 돌이 작아 상대가 손을 빼 버린다.', '조이는 순서를 틀려 상대에게 활로를 늘릴 기회를 준다.'],
+  },
+  '후절수(後切手)': {
+    category: 'tactic',
+    pros: ['갇혀 죽은 줄 알았던 돌이 상대의 활로를 미리 막아 두는 역할을 한다.'],
+    mistakes: ['바깥을 메우지 않고 먼저 안쪽에 두어 상대에게 손 뺄 여유를 준다.', '갇힌 돌을 살리려다 기회를 놓친다.'],
+  },
+  '버림돌': {
+    category: 'strategy',
+    pros: ['한 수로 지킬 수 있는 곳을 지켜 손해를 최소화한다. 버린 돌로 상대를 자충으로 만들 수도 있다.'],
+    mistakes: ['상대를 끊고 있는 돌을 돌 수가 적다는 이유로 버린다.', '버릴 결심을 못 해 두 곳을 다 잃는다.'],
+  },
+  '연속 희생': {
+    category: 'tactic',
+    pros: ['한 번으로 안 되는 자리를 두 번, 세 번 던져 넣어 끝낼 수 있다.'],
+    mistakes: ['던질 때마다 상대 공간이 줄어드는지 확인하지 않는다.', '상대가 따내지 않아도 되는데 던져 돌만 준다.'],
+  },
+  '패 만들기': {
+    category: 'tactic',
+    pros: ['그냥 두면 죽는 돌에 한 번 더 기회를 만든다.'],
+    mistakes: ['팻감을 세지 않고 패를 시작한다.', '패에 져서 원래보다 더 나빠진다.'],
+  },
+  '팻감': {
+    category: 'tactic',
+    pros: ['상대가 받는 사이에 패를 되따낼 수 있다. 팻감 수가 곧 패의 승부다.'],
+    mistakes: ['상대가 무시할 만한 작은 팻감을 써서 패를 그냥 내준다.', '이길 수 없는 패에 팻감을 소모해 뒷맛까지 없앤다.'],
+  },
 };
 
 /** 아직 LEVEL로 구현되지 않은 항목들 — "준비 중"임을 분명히 표시한다. */
@@ -123,9 +168,6 @@ export const UPCOMING = [
   { name: '환격', category: 'tactic', kind: KIND.TESUJI, level: 37, definition: '한 점을 일부러 잡히게 한 뒤 되잡는 수법.' },
   { name: '먹여치기', category: 'tactic', kind: KIND.TESUJI, level: 38, definition: '상대 활로를 줄이려고 일부러 돌을 던져 넣는 수.' },
   { name: '자충 유도', category: 'tactic', kind: KIND.TESUJI, level: 39, definition: '상대가 스스로 자기 활로를 메우게 만드는 기술.' },
-  { name: '치중', category: 'tactic', kind: KIND.TESUJI, level: 43, definition: '상대 모양의 중심 급소에 두어 눈을 없애는 수.' },
-  { name: '후절수', category: 'tactic', kind: KIND.TESUJI, level: 45, definition: '잡혀 없어진 돌 자리를 이용해 다시 수를 내는 고급 테수지.' },
-  { name: '팻감', category: 'tactic', kind: KIND.RULE, level: 49, definition: '패와 관계없는 곳에서 상대가 반드시 받아야 할 위협을 만드는 수.' },
   { name: '두 눈', category: 'life', kind: KIND.LIFE, level: 51, definition: '완전한 눈이 두 개 있으면 상대가 아무리 두어도 잡히지 않는다.' },
   { name: '가짜 눈', category: 'life', kind: KIND.LIFE, level: 52, definition: '눈처럼 보이지만 대각을 상대가 차지해 결국 메워지는 자리.' },
   { name: '궁도 넓히기', category: 'life', kind: KIND.PROVERB, level: 53, definition: '삶은 넓힘에 있다 — 살려면 눈을 낼 공간을 넓혀야 한다.' },

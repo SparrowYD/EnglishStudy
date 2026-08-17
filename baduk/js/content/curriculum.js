@@ -11,8 +11,9 @@ import { CHAPTER1 } from './ch1.js';
 import { CHAPTER2 } from './ch2.js';
 import { CHAPTER3 } from './ch3.js';
 import { CHAPTER4 } from './ch4.js';
+import { CHAPTER5 } from './ch5.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5];
 
 export const TOTAL_LEVELS = 100;
 
@@ -42,9 +43,8 @@ export const CHAPTERS = [
     summary: '축·장문으로 잡고, 촉촉수·환격·먹여치기로 상대가 스스로 무너지게 만든다.',
   },
   {
-    id: 5, range: [41, 50], title: '고급 맥과 국지전', ready: false,
+    id: 5, range: [41, 50], title: '고급 맥과 국지전', ready: true,
     summary: '끊는 맥·잇는 맥·치중·조임·후절수·버림돌·패 만들기·팻감.',
-    titles: ['끊는 맥', '잇는 맥', '치중', '회돌이 계열의 조임', '후절수', '버림돌 전술', '연속 희생 전술', '패 만들기', '팻감', '맥과 테수지 종합시험'],
   },
   {
     id: 6, range: [51, 60], title: '사활 공식', ready: false,
