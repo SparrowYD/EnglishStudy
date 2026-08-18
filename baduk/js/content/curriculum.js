@@ -12,8 +12,9 @@ import { CHAPTER2 } from './ch2.js';
 import { CHAPTER3 } from './ch3.js';
 import { CHAPTER4 } from './ch4.js';
 import { CHAPTER5 } from './ch5.js';
+import { CHAPTER6 } from './ch6.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6];
 
 export const TOTAL_LEVELS = 100;
 
@@ -47,9 +48,8 @@ export const CHAPTERS = [
     summary: '끊는 맥·잇는 맥·치중·조임·후절수·버림돌·패 만들기·팻감.',
   },
   {
-    id: 6, range: [51, 60], title: '사활 공식', ready: false,
+    id: 6, range: [51, 60], title: '사활 공식', ready: true,
     summary: '두 눈·가짜 눈·궁도 넓히기와 좁히기·귀의 급소·오궁·육궁.',
-    titles: ['두 눈', '진짜 눈과 가짜 눈', '궁도를 넓혀 살기', '궁도를 좁혀 잡기', '1-1점과 2-1점의 귀 사활 급소', '직사궁 / 곡사궁 기본', '오궁 형태', '육궁 형태', '오궁도화 / 매화육궁', '사활 기본 종합시험'],
   },
   {
     id: 7, range: [61, 70], title: '수상전·빅·패 사활', ready: false,

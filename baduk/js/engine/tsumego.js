@@ -11,34 +11,71 @@
  *
  * 판정 기준은 규칙 그대로다 — 두 번 연속 패스로 끝났을 때
  * 그 무리가 반면에 남아 있으면 산 것이다(빅도 산 것으로 센다).
+ *
+ * 패 처리: 이미 나왔던 국면으로 돌아가는 수는 두지 못한다.
+ * 이것은 game.js가 실제 대국에서 쓰는 동형반복 금지(positional superko)와 같은 규칙이므로,
+ * 이 게임 안에서는 일관된 답이 나온다. 다만 **바깥 팻감이 개입하는 실전의 패**와는
+ * 결론이 달라질 수 있다. 탐색 중에 동형반복이 한 번이라도 걸리면 koInvolved로 알려 주므로,
+ * 콘텐츠를 만들 때 그 모양은 "패 없이 확정"이라고 단정하지 않는다.
  */
 
 import { EMPTY, opposite } from './board.js';
 
-/** 궁도(무리가 둘러싼 안쪽 영역)를 찾는다. 밖으로 새면 null. */
+/**
+ * 궁도(무리가 둘러싼 안쪽 영역)를 찾는다. 밖으로 트여 있으면 null.
+ *
+ * 두 번에 나눠 찾는다.
+ *  1) 빈 점만 따라 퍼진다 — 밖으로 트여 있으면 여기서 바로 한도를 넘어 null이 된다.
+ *  2) 궁도 **안에 갇힌** 상대 돌만 흡수한다(던져 넣은 돌). 잡히면 그 자리가 다시 비기 때문이다.
+ *
+ * 2)에서 "갇힌"의 기준이 중요하다. 바깥 울타리와 이어진 상대 돌은 흡수하지 않는다 —
+ * 그 돌은 궁도의 **경계**이지 궁도의 일부가 아니다. 흡수해 버리면 울타리를 타고
+ * 반상 전체로 새어 나가, 젖혀 좁힌 뒤의 국면을 읽지 못하게 된다.
+ */
 export function eyeRegion(board, target, maxPoints = 14) {
   const defender = board.cells[target];
   if (defender === EMPTY) return null;
   const attacker = opposite(defender);
   const group = board.group(target);
+
   const region = new Set();
   const stack = [];
-  for (const l of group.liberties) { region.add(l); stack.push(l); }
+  const pushEmpty = (p) => { if (!region.has(p)) { region.add(p); stack.push(p); } };
+  for (const l of group.liberties) pushEmpty(l);
   if (region.size === 0) return null;
 
-  while (stack.length) {
-    if (region.size > maxPoints) return null;   // 밖으로 샜다 = 둘러싸인 무리가 아니다
-    const cur = stack.pop();
-    for (const nb of board.neighbors(cur)) {
-      const v = board.cells[nb];
-      // 빈 점과 "안쪽에 들어와 있는 상대 돌"만 따라 퍼진다.
-      // 자기 돌(defender)에서 멈추므로, 무리가 진짜로 둘러싸고 있으면 영역이 닫힌다.
-      if (v !== EMPTY && v !== attacker) continue;
-      if (region.has(nb)) continue;
-      region.add(nb);
-      stack.push(nb);
+  const spreadEmpty = () => {
+    while (stack.length) {
+      if (region.size > maxPoints) return false;
+      const cur = stack.pop();
+      for (const nb of board.neighbors(cur)) {
+        if (board.cells[nb] === EMPTY) pushEmpty(nb);
+      }
     }
+    return region.size <= maxPoints;
+  };
+  if (!spreadEmpty()) return null;
+
+  for (let guard = 0; guard < 8; guard++) {
+    let grew = false;
+    const checked = new Set();
+    for (const p of [...region]) {
+      for (const nb of board.neighbors(p)) {
+        if (board.cells[nb] !== attacker || region.has(nb) || checked.has(nb)) continue;
+        const g = board.group(nb);
+        for (const s of g.stones) checked.add(s);
+        if (!g.liberties.every((l) => region.has(l))) continue;   // 울타리와 이어진 돌
+        for (const s of g.stones) region.add(s);
+        for (const s of g.stones) {
+          for (const q of board.neighbors(s)) if (board.cells[q] === EMPTY) pushEmpty(q);
+        }
+        grew = true;
+      }
+    }
+    if (!grew) break;
+    if (!spreadEmpty()) return null;
   }
+
   if (region.size > maxPoints) return null;
   return [...region].sort((a, b) => a - b);
 }

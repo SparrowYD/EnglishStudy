@@ -3,7 +3,7 @@ import { CHAPTER1 } from '../js/content/ch1.js';
 import { validateAll } from '../js/content/validate.js';
 
 let chapters = [CHAPTER1];
-for (const f of ['ch2','ch3','ch4','ch5']) {
+for (const f of ['ch2','ch3','ch4','ch5','ch6','ch7','ch8','ch9','ch10']) {
   try { const m = await import(`../js/content/${f}.js`); chapters.push(Object.values(m)[0]); } catch {}
 }
 

@@ -144,6 +144,51 @@ const EXTRA = {
     pros: ['그냥 두면 죽는 돌에 한 번 더 기회를 만든다.'],
     mistakes: ['팻감을 세지 않고 패를 시작한다.', '패에 져서 원래보다 더 나빠진다.'],
   },
+  '두 눈': {
+    category: 'life',
+    pros: ['두 눈이 나면 그 무리는 더 이상 계산할 필요가 없다. 판 전체를 볼 여유가 생긴다.'],
+    mistakes: ['눈이 진짜인지 확인하지 않고 두 눈이라고 여긴다.', '이미 살아 있는 무리에 한 수를 더 들여 손해를 본다.'],
+  },
+  '진짜 눈의 조건': {
+    category: 'life',
+    pros: ['눈을 세는 기준이 분명해져 사활 판단이 빨라진다.'],
+    mistakes: ['눈 자리의 상하좌우만 보고 대각을 보지 않는다.', '변·귀에서는 대각을 전부 가져야 한다는 것을 잊는다.'],
+  },
+  '궁도와 삶': {
+    category: 'life',
+    pros: ['"칸 수"가 아니라 "나눌 수 있는가"로 보게 되어 처음 보는 모양도 스스로 판단할 수 있다.'],
+    mistakes: ['넓으니 살았다고 넘겨짚는다.', '이미 살아 있는 직사궁·직오궁에 한 수를 더 둔다.'],
+  },
+  '궁도 좁히기': {
+    category: 'life',
+    pros: ['잡는 쪽의 사고 순서가 분명해진다 — 칸 수 → 일렬 여부 → 두루 붙은 점.'],
+    mistakes: ['일렬 궁도에 치중해 내 돌만 잡힌다.', '급소를 찾기 전에 바깥부터 메워 상대에게 정비할 시간을 준다.'],
+  },
+  '귀의 급소': {
+    category: 'life',
+    pros: ['귀는 경계가 벽 노릇을 해서 같은 칸 수라도 더 쉽게 잡거나 살 수 있다.'],
+    mistakes: ['변에서 쓰던 "한가운데" 감각을 귀에 그대로 옮긴다.', '귀곡사처럼 위치에 따라 결과가 뒤집히는 모양을 외운 대로 판단한다.'],
+  },
+  '네 칸 궁도의 분류': {
+    category: 'life',
+    pros: ['실전에서 가장 자주 나오는 크기라, 이 다섯 가지만 알아도 사활 판단의 절반이 끝난다.'],
+    mistakes: ['사각4궁에 한 수를 들여 살리려 한다(먼저 두어도 죽는다).', '귀에서도 곡사궁이 산다고 여긴다.'],
+  },
+  '다섯 칸 궁도': {
+    category: 'life',
+    pros: ['오궁도화·십자오궁만 기억하면 나머지 다섯 칸은 손댈 필요가 없다.'],
+    mistakes: ['직오궁에 치중해 돌을 버린다.', '"죽는 모양"을 차례와 무관한 사실로 여긴다.'],
+  },
+  '여섯 칸 궁도': {
+    category: 'life',
+    pros: ['넓은 궁도에서도 급소를 찾는 눈이 생긴다.'],
+    mistakes: ['여섯 칸이면 무조건 산다고 넘겨짚는다.', '2선에 늘어선 돌을 겉보기 칸 수로 계산한다.'],
+  },
+  '오궁도화와 매화육궁': {
+    category: 'life',
+    pros: ['궁도 안의 2×2 네모만 찾으면 급소가 바로 보인다.'],
+    mistakes: ['궁도에 이미 상대 돌이 들어와 있는데 겉모양으로 이름을 붙인다.', '먼저 두는 쪽이 이긴다는 것을 잊고 차례를 확인하지 않는다.'],
+  },
   '팻감': {
     category: 'tactic',
     pros: ['상대가 받는 사이에 패를 되따낼 수 있다. 팻감 수가 곧 패의 승부다.'],
@@ -168,11 +213,6 @@ export const UPCOMING = [
   { name: '환격', category: 'tactic', kind: KIND.TESUJI, level: 37, definition: '한 점을 일부러 잡히게 한 뒤 되잡는 수법.' },
   { name: '먹여치기', category: 'tactic', kind: KIND.TESUJI, level: 38, definition: '상대 활로를 줄이려고 일부러 돌을 던져 넣는 수.' },
   { name: '자충 유도', category: 'tactic', kind: KIND.TESUJI, level: 39, definition: '상대가 스스로 자기 활로를 메우게 만드는 기술.' },
-  { name: '두 눈', category: 'life', kind: KIND.LIFE, level: 51, definition: '완전한 눈이 두 개 있으면 상대가 아무리 두어도 잡히지 않는다.' },
-  { name: '가짜 눈', category: 'life', kind: KIND.LIFE, level: 52, definition: '눈처럼 보이지만 대각을 상대가 차지해 결국 메워지는 자리.' },
-  { name: '궁도 넓히기', category: 'life', kind: KIND.PROVERB, level: 53, definition: '삶은 넓힘에 있다 — 살려면 눈을 낼 공간을 넓혀야 한다.' },
-  { name: '1-1 · 2-1 급소', category: 'life', kind: KIND.LIFE, level: 55, definition: '귀는 반상 경계 때문에 특수한 사활 급소가 생긴다.' },
-  { name: '오궁도화', category: 'life', kind: KIND.LIFE, level: 59, definition: '다섯 집 모양의 급소. 모양을 외우는 것이 아니라 왜 가운데가 급소인지를 이해해야 한다.' },
   { name: '빅', category: 'life', kind: KIND.LIFE, level: 64, definition: '서로 공배를 메우면 스스로 불리해져 손대지 못하는 공존 형태.' },
   { name: '유가무가 불상전', category: 'life', kind: KIND.PROVERB, level: 63, definition: '집이 있는 쪽과 없는 쪽의 수상전은 싸움이 되지 않는다는 격언. 성립 조건이 있다.' },
   { name: '귀곡사', category: 'life', kind: KIND.LIFE, level: 67, definition: '귀의 특수 사활. 규칙 체계(한국·일본식 / 중국식)에 따라 처리가 달라질 수 있다.' },
