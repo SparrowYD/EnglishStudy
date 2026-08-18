@@ -32,7 +32,7 @@ import { EMPTY, opposite } from './board.js';
  * 그 돌은 궁도의 **경계**이지 궁도의 일부가 아니다. 흡수해 버리면 울타리를 타고
  * 반상 전체로 새어 나가, 젖혀 좁힌 뒤의 국면을 읽지 못하게 된다.
  */
-export function eyeRegion(board, target, maxPoints = 14) {
+export function eyeRegion(board, target, maxPoints = 14, maxTotal = 26) {
   const defender = board.cells[target];
   if (defender === EMPTY) return null;
   const attacker = opposite(defender);
@@ -44,15 +44,18 @@ export function eyeRegion(board, target, maxPoints = 14) {
   for (const l of group.liberties) pushEmpty(l);
   if (region.size === 0) return null;
 
+  // 한도는 **빈 점 수**로 센다 — 탐색의 가지 수를 결정하는 것이 빈 점이기 때문이다.
+  // 흡수한 상대 돌은 따내야 비로소 둘 수 있으므로 따로(더 넉넉하게) 센다.
+  let empties = region.size;
   const spreadEmpty = () => {
     while (stack.length) {
-      if (region.size > maxPoints) return false;
+      if (empties > maxPoints || region.size > maxTotal) return false;
       const cur = stack.pop();
       for (const nb of board.neighbors(cur)) {
-        if (board.cells[nb] === EMPTY) pushEmpty(nb);
+        if (board.cells[nb] === EMPTY && !region.has(nb)) { empties += 1; pushEmpty(nb); }
       }
     }
-    return region.size <= maxPoints;
+    return empties <= maxPoints && region.size <= maxTotal;
   };
   if (!spreadEmpty()) return null;
 
@@ -76,7 +79,7 @@ export function eyeRegion(board, target, maxPoints = 14) {
     if (!spreadEmpty()) return null;
   }
 
-  if (region.size > maxPoints) return null;
+  if (empties > maxPoints || region.size > maxTotal) return null;
   return [...region].sort((a, b) => a - b);
 }
 

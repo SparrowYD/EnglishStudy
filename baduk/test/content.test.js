@@ -6,16 +6,17 @@ import { CHAPTER3 } from '../js/content/ch3.js';
 import { CHAPTER4 } from '../js/content/ch4.js';
 import { CHAPTER5 } from '../js/content/ch5.js';
 import { CHAPTER6 } from '../js/content/ch6.js';
+import { CHAPTER7 } from '../js/content/ch7.js';
 import { validateAll } from '../js/content/validate.js';
 import { ProblemSession, VERDICT } from '../js/game/problem.js';
 import { StageSession, STEP } from '../js/game/stage.js';
 import { fromLabel } from '../js/engine/board.js';
 
-const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6];
+const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6, ...CHAPTER7];
 
 test('구현된 LEVEL은 1번부터 빠짐없이 이어진다', () => {
   assert.deepEqual(LEVELS.map((l) => l.id), Array.from({ length: LEVELS.length }, (_, i) => i + 1));
-  assert.ok(LEVELS.length >= 60, `구현된 LEVEL이 ${LEVELS.length}개뿐입니다`);
+  assert.ok(LEVELS.length >= 70, `구현된 LEVEL이 ${LEVELS.length}개뿐입니다`);
 });
 
 test('모든 LEVEL과 문제가 검증을 통과한다', () => {

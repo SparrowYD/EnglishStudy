@@ -13,8 +13,9 @@ import { CHAPTER3 } from './ch3.js';
 import { CHAPTER4 } from './ch4.js';
 import { CHAPTER5 } from './ch5.js';
 import { CHAPTER6 } from './ch6.js';
+import { CHAPTER7 } from './ch7.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6, ...CHAPTER7];
 
 export const TOTAL_LEVELS = 100;
 
@@ -52,9 +53,8 @@ export const CHAPTERS = [
     summary: '두 눈·가짜 눈·궁도 넓히기와 좁히기·귀의 급소·오궁·육궁.',
   },
   {
-    id: 7, range: [61, 70], title: '수상전·빅·패 사활', ready: false,
+    id: 7, range: [61, 70], title: '수상전·빅·패 사활', ready: true,
     summary: '활로 계산·안팎 공배·유가무가·빅·패 사활·귀곡사·육사팔활.',
-    titles: ['수상전과 활로 계산', '바깥 공배와 안쪽 공배', '집이 있는 수상전', '빅', '패 사활', '귀의 특수 사활', '귀곡사 개념', '2선 사활과 육사팔활', '종합 수상전', '사활 BOSS'],
   },
   {
     id: 8, range: [71, 80], title: '포석과 전판 전략', ready: false,

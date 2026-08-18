@@ -189,6 +189,46 @@ const EXTRA = {
     pros: ['궁도 안의 2×2 네모만 찾으면 급소가 바로 보인다.'],
     mistakes: ['궁도에 이미 상대 돌이 들어와 있는데 겉모양으로 이름을 붙인다.', '먼저 두는 쪽이 이긴다는 것을 잊고 차례를 확인하지 않는다.'],
   },
+  '수상전': {
+    category: 'life',
+    pros: ['활로만 정확히 세면 싸우기 전에 승패를 알 수 있다.'],
+    mistakes: ['공유 공배부터 메워 스스로 활로를 줄인다.', '상대에게 눈이 있는데 단순 활로 수로만 계산한다.'],
+  },
+  '공배를 메우는 순서': {
+    category: 'life',
+    pros: ['같은 활로 수에서도 한 수를 벌 수 있다.'],
+    mistakes: ['안쪽 공배를 먼저 메운다.', '상대가 그 자리로 눈을 내거나 달아날 수 있는데 원칙만 지킨다.'],
+  },
+  '유가무가 불상전(有家無家 不相戰)': {
+    category: 'life',
+    pros: ['눈 하나가 한 수 이상의 값을 한다. 수상전 판단이 단순해진다.'],
+    mistakes: ['활로 차이가 큰데도 격언만 믿는다.', '양쪽 다 눈이 있는데 유가무가로 착각한다.'],
+  },
+  '빅': {
+    category: 'life',
+    pros: ['이길 수 없는 수상전에서 전멸을 피한다.'],
+    mistakes: ['두 눈으로 살 수 있는데 빅으로 만들어 집을 날린다.', '빅 자리를 자기 집으로 계산한다.'],
+  },
+  '패 사활': {
+    category: 'life',
+    pros: ['죽은 모양에 마지막 기회를 만든다.'],
+    mistakes: ['팻감을 세지 않고 패를 시작한다.', '이길 수 없는 패에 팻감을 소모해 다른 곳의 뒷맛까지 없앤다.'],
+  },
+  '귀의 사활': {
+    category: 'life',
+    pros: ['경계를 벽으로 쓰면 적은 돌로도 잡거나 살 수 있다.'],
+    mistakes: ['변의 감각을 귀에 그대로 옮긴다.', '귀라서 무조건 죽는다고 넘겨짚는다.'],
+  },
+  '귀곡사': {
+    category: 'life',
+    pros: ['모양 이름이 아니라 위치까지 보는 습관이 생긴다.'],
+    mistakes: ['"곡사궁은 산다"를 귀에서도 적용한다.', '규칙 체계에 따라 처리가 달라진다는 점을 모른 채 단정한다.'],
+  },
+  '육사팔활(六死八活)': {
+    category: 'life',
+    pros: ['2선 돌의 생사를 세는 것만으로 판단할 수 있다.'],
+    mistakes: ['양끝이 트여 있는데도 숫자를 그대로 적용한다.', '살아 있는 여덟 점에 들어가 굳혀 준다.'],
+  },
   '팻감': {
     category: 'tactic',
     pros: ['상대가 받는 사이에 패를 되따낼 수 있다. 팻감 수가 곧 패의 승부다.'],
@@ -213,10 +253,6 @@ export const UPCOMING = [
   { name: '환격', category: 'tactic', kind: KIND.TESUJI, level: 37, definition: '한 점을 일부러 잡히게 한 뒤 되잡는 수법.' },
   { name: '먹여치기', category: 'tactic', kind: KIND.TESUJI, level: 38, definition: '상대 활로를 줄이려고 일부러 돌을 던져 넣는 수.' },
   { name: '자충 유도', category: 'tactic', kind: KIND.TESUJI, level: 39, definition: '상대가 스스로 자기 활로를 메우게 만드는 기술.' },
-  { name: '빅', category: 'life', kind: KIND.LIFE, level: 64, definition: '서로 공배를 메우면 스스로 불리해져 손대지 못하는 공존 형태.' },
-  { name: '유가무가 불상전', category: 'life', kind: KIND.PROVERB, level: 63, definition: '집이 있는 쪽과 없는 쪽의 수상전은 싸움이 되지 않는다는 격언. 성립 조건이 있다.' },
-  { name: '귀곡사', category: 'life', kind: KIND.LIFE, level: 67, definition: '귀의 특수 사활. 규칙 체계(한국·일본식 / 중국식)에 따라 처리가 달라질 수 있다.' },
-  { name: '육사팔활', category: 'life', kind: KIND.PROVERB, level: 68, definition: '2선에서 여섯 점은 죽고 여덟 점은 산다는 격언. 양끝 모양과 선수 여부에 따라 예외가 있다.' },
   { name: '선귀후변중앙', category: 'opening', kind: KIND.PROVERB, level: 71, definition: '귀 → 변 → 중앙 순으로 집을 만들기 쉽다. 같은 돌 수로 만들 수 있는 집을 비교해 보면 알 수 있다.' },
   { name: '3선과 4선', category: 'opening', kind: KIND.STRATEGY, level: 72, definition: '3선은 실리, 4선은 세력. 어느 쪽이 항상 우월하지 않고 균형이 중요하다.' },
   { name: '벌림', category: 'opening', kind: KIND.SHAPE, level: 74, definition: '내 돌에서 적당한 거리를 두고 변으로 펼치는 수.' },
