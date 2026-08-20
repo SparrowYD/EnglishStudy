@@ -49,7 +49,7 @@ export const CHAPTER2 = [
         prompt: '백 D4에 **붙이는** 수를 두세요.',
         setup: { white: ['D4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C4', 'D5', 'E4', 'D3'] },
+        goal: { type: 'point', accept: ['C4', 'D5', 'E4', 'D3'], reason: '붙임은 상대 돌에 **상하좌우로 바로 닿는** 자리입니다. 대각선은 붙임이 아닙니다.' },
         comments: {
           C5: '대각선 방향입니다. 이것은 붙임이 아니라 마늘모 방향의 수입니다(LEVEL 21).',
           E5: '대각선은 붙임이 아닙니다. 붙임은 상하좌우로 딱 붙는 수입니다.',
@@ -149,7 +149,7 @@ export const CHAPTER2 = [
         prompt: '백이 D5로 붙여 왔습니다. **젖히세요.**',
         setup: { black: ['D4'], white: ['D5'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C5', 'E5'] },
+        goal: { type: 'point', accept: ['C5', 'E5'], reason: '젖힘은 붙어 있는 상대 돌의 **옆으로 돌아 나가는** 수입니다. 상대 돌과 대각으로 마주 보는 자리를 찾으세요.' },
         comments: {
           D6: '이것은 백돌 너머로 뛰어넘은 수입니다. 젖힘은 내 돌에서 대각선, 상대 돌에는 옆으로 붙는 자리입니다.',
           E4: '내 돌 옆으로 뻗은 수입니다. 나쁜 수는 아니지만 젖힘은 아닙니다.',
@@ -164,7 +164,7 @@ export const CHAPTER2 = [
         prompt: '오른쪽에 흑 G4가 있습니다. 두 젖힘 자리 중 **내 돌과 힘을 합치는** 쪽으로 젖히세요.',
         setup: { black: ['D4', 'G4'], white: ['D5'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['E5'] },
+        goal: { type: 'point', accept: ['E5'], reason: '젖힐 곳은 두 군데지만, **내 다른 돌과 힘을 합치는 쪽**이어야 합니다. 반대쪽으로 젖히면 혼자 떨어집니다.' },
         comments: {
           C5: '왼쪽으로 젖히면 백을 오른쪽(내 G4가 있는 방향)으로 밀어 주게 됩니다. 내 세력이 있는 쪽으로 상대를 몰지 않는 것이 요령입니다.',
         },
@@ -189,7 +189,7 @@ export const CHAPTER2 = [
         prompt: '아래쪽에 흑 세력이 있습니다. 백 D16에 붙은 흑 D15에서, **흑 세력 쪽으로 백을 몰지 않는** 방향으로 젖히세요.',
         setup: { black: ['D15', 'D11', 'G16'], white: ['D16'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C16'] },
+        goal: { type: 'point', accept: ['C16'], reason: '끊는 자리는 백 두 점 사이의 이음자리 한 곳입니다.' },
         comments: {
           E16: '오른쪽으로 젖히면 백이 왼쪽 귀로 파고들며 살기 쉽습니다. 게다가 오른쪽에는 이미 흑 G16이 있어 백을 그쪽으로 몰 이유가 없습니다.',
         },
@@ -387,7 +387,7 @@ export const CHAPTER2 = [
         prompt: '흑 D4와 F4를 **호구 모양**으로 연결하세요. (사이를 직접 메우지 않고)',
         setup: { black: ['D4', 'F4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['E5', 'E3'] },
+        goal: { type: 'point', accept: ['E5', 'E3'], reason: '호구는 사이를 직접 메우지 않고 **위나 아래에서 감싸는** 모양입니다. 두 돌 사이의 점이 호랑이 입 안이 되어야 합니다.' },
         comments: {
           E4: '이것은 꽉 이음입니다. 확실하지만 이번 문제는 호구를 익히는 것입니다. 호구는 사이를 비워 둔 채 위나 아래에서 감쌉니다.',
         },
@@ -437,7 +437,7 @@ export const CHAPTER2 = [
         prompt: '흑 Q16과 Q14를 호구 모양으로 연결하세요.',
         setup: { black: ['Q16', 'Q14'], white: ['P15'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['R15'] },
+        goal: { type: 'point', accept: ['R15'], reason: '호구 안으로 들어온 돌은 활로가 하나뿐입니다. 그 활로를 메우는 자리입니다.' },
         comments: {
           Q15: '꽉 이음도 연결은 되지만, 이 문제는 호구를 찾는 것입니다. 게다가 백 P15가 이미 왼쪽을 차지했으니 오른쪽에서 감싸는 편이 모양이 좋습니다.',
           P15: '이미 백돌이 있는 자리입니다.',
@@ -504,7 +504,7 @@ export const CHAPTER2 = [
         prompt: '흑 D5·E5를 보강합니다. 아래쪽에 나란히 두어 **쌍립**을 만드세요. (D3과 E3 두 점이 필요한 모양입니다 — 먼저 D3을 놓아 활로 6개짜리 두 점을 만드세요)',
         setup: { black: ['D5', 'E5'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['D3', 'E3'] },
+        goal: { type: 'point', accept: ['D3', 'E3'], reason: '쌍립은 두 돌이 나란히 두 쌍을 이루는 모양입니다. 백이 끊어도 되이을 수 있어야 합니다.' },
         comments: {
           D4: '위쪽 돌에 딱 붙는 자리입니다. 이러면 세 점이 ㄱ자로 뭉치는 빈삼각이 되어 모양이 나쁩니다(LEVEL 22에서 자세히).',
           E4: '여기도 빈삼각이 되는 자리입니다. 쌍립은 한 칸 띄어 나란히 서는 모양입니다.',
@@ -559,7 +559,7 @@ export const CHAPTER2 = [
         prompt: '흑 D4에서 **날일자**로 진출하는 자리에 두세요.',
         setup: { black: ['D4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['F5', 'F3', 'B5', 'B3', 'C6', 'E6', 'C2', 'E2'] },
+        goal: { type: 'point', accept: ['F5', 'F3', 'B5', 'B3', 'C6', 'E6', 'C2', 'E2'], reason: '백이 어디에 끊어도 되이을 수 있어야 합니다. 쌍립이나 호구가 되는 자리를 찾으세요.' },
         comments: {
           E5: '이것은 대각선 한 칸, 즉 마늘모입니다(LEVEL 21). 날일자는 한 칸 더 갑니다.',
           F4: '옆으로 두 칸 간 두칸뜀입니다(LEVEL 19). 날일자는 옆 두 칸 + 위 한 칸입니다.',
@@ -575,7 +575,7 @@ export const CHAPTER2 = [
         prompt: '백이 귀에 걸쳐 왔습니다. 화점의 흑돌에서 **날일자로 귀를 지키세요.**',
         setup: { black: ['D4'], white: ['F3'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C6', 'B5'] },
+        goal: { type: 'point', accept: ['C6', 'B5'], reason: '날일자는 한 칸 옆 + 두 칸 앞(또는 그 반대)입니다. 귀를 지키는 방향이어야 합니다.' },
         comments: {
           E3: '백돌에 붙는 수입니다. 붙이면 상대가 튼튼해지므로 여기서는 권하지 않습니다.',
           C3: '귀를 아주 굳게 지키는 수이지만 너무 낮아 발전성이 적습니다. 이번 문제는 날일자를 찾는 것입니다.',
@@ -601,7 +601,7 @@ export const CHAPTER2 = [
         prompt: '흑 한 점이 백에게 눌리고 있습니다. **날일자**로 중앙을 향해 달아나세요.',
         setup: { black: ['D4'], white: ['C4', 'D5', 'C6', 'D7'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['F5', 'E6'] },
+        goal: { type: 'point', accept: ['F5', 'E6'], reason: '끊는 자리는 백 두 점 사이의 이음자리입니다.' },
         comments: {
           E4: '뻗음입니다. 안전하지만 느려서 백에게 계속 눌립니다.',
           D3: '아래로 내려가면 가장자리에 몰려 발전성이 없습니다.',
@@ -649,7 +649,7 @@ export const CHAPTER2 = [
         prompt: '흑 D4에서 **눈목자**로 벌리는 자리에 두세요.',
         setup: { black: ['D4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['G5', 'G3', 'C7', 'E7'] },
+        goal: { type: 'point', accept: ['G5', 'G3', 'C7', 'E7'], reason: '눈목자는 한 칸 옆 + 세 칸 앞입니다. 날일자(한 칸 + 두 칸)와 헷갈리지 마세요.' },
         comments: {
           F5: '이것은 날일자입니다. 눈목자는 한 칸 더 갑니다.',
           G4: '옆으로 세 칸 곧게 간 수(세칸뜀)입니다. 눈목자는 옆으로 세 칸 + 위 한 칸입니다.',
@@ -664,7 +664,7 @@ export const CHAPTER2 = [
         prompt: '오른쪽에 백이 이미 강합니다. 이럴 때는 **덜 얇은** 쪽이 낫습니다. 날일자로 진출하세요.',
         setup: { black: ['D4'], white: ['H4', 'H3', 'G5'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['F5', 'F3'] },
+        goal: { type: 'point', accept: ['F5', 'F3'], reason: '두 점을 이으면서 백 두 점의 활로를 하나로 줄이는 자리여야 합니다.' },
         comments: {
           G5: '이미 백돌이 있는 자리입니다.',
           G3: '눈목자입니다. 백이 강한 쪽으로 얇게 벌리면 사이를 갈라 끊길 위험이 큽니다.',
@@ -702,7 +702,7 @@ export const CHAPTER2 = [
         prompt: '아래쪽이 넓게 비어 있습니다. 흑 D16에서 **눈목자**로 크게 벌리세요.',
         setup: { black: ['D16'], white: ['Q16', 'Q4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C13', 'E13'] },
+        goal: { type: 'point', accept: ['C13', 'E13'], reason: '눈목자는 한 칸 옆 + 세 칸 앞입니다. 아래쪽으로 크게 벌리는 방향이어야 합니다.' },
         comments: {
           C14: '날일자입니다. 나쁘지 않지만 이번에는 더 넓게 벌리는 눈목자를 찾아보세요.',
         },
@@ -746,7 +746,7 @@ export const CHAPTER2 = [
         prompt: '백에게 눌린 흑 D4를 **한칸뜀**으로 달아나게 하세요.',
         setup: { black: ['D4'], white: ['C4', 'D5', 'C6'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['F4', 'D2'] },
+        goal: { type: 'point', accept: ['F4', 'D2'], reason: '한칸뜀은 내 돌에서 **일직선으로 한 칸 띄운** 자리입니다. 백에게 막히지 않은 방향이어야 합니다.' },
         comments: {
           E4: '뻗음입니다. 안전하지만 느립니다. 한칸뜀은 한 칸 띄어 뜁니다.',
           E5: '마늘모 방향입니다. 한칸뜀은 곧게 한 칸 띄어 뛰는 수입니다.',
@@ -772,7 +772,7 @@ export const CHAPTER2 = [
         prompt: '넓은 변으로 나가야 합니다. 흑 D4에서 **두칸뜀**으로 크게 벌리세요.',
         setup: { black: ['D4'], white: ['Q4', 'Q16'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['G4', 'D7'] },
+        goal: { type: 'point', accept: ['G4', 'D7'], reason: '한칸뜀이 끊기는 국면이므로 **뻗어야** 합니다. 활로가 4개가 되는 방향을 찾으세요.' },
         comments: {
           F4: '한칸뜀입니다. 튼튼하지만 이번에는 더 빠른 두칸뜀을 찾아보세요.',
         },
@@ -816,7 +816,7 @@ export const CHAPTER2 = [
         prompt: '백이 붙여 왔습니다. 젖히세요.',
         setup: { black: ['Q16'], white: ['Q17'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['P17', 'R17'] },
+        goal: { type: 'point', accept: ['P17', 'R17'], reason: '화점은 굵게 표시된 아홉 개의 점입니다. 비어 있는 곳이어야 합니다.' },
         explanation: '내 돌에서 대각선, 상대 돌에는 옆으로 붙는 P17·R17이 젖힘입니다.',
       }),
 

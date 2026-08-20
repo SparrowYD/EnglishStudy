@@ -99,6 +99,8 @@ export function validateProblem(problem, ctx = '') {
       if (!board.check(color, i).ok) errors.push(`accept 좌표 ${l}에 둘 수 없습니다.`);
     }
     if ((problem.goal.accept || []).length === 0) errors.push('accept 목록이 비어 있습니다.');
+    // point 목표는 엔진이 이유를 계산할 수 없다. 오답 설명에 쓸 기준을 반드시 적어 둔다(요구사항 79).
+    if (!problem.goal.reason) errors.push("point 목표에는 goal.reason(오답에게 알려 줄 기준)이 필요합니다.");
   }
 
   // 개별 코멘트가 달린 좌표는 실제로 존재하는 자리여야 한다

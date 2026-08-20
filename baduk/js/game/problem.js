@@ -18,6 +18,7 @@ import {
   isSafelyConnected, isConnected, canConnectNow, groupsInAtari, neighborhood,
 } from '../engine/analysis.js';
 import { survives, eyeRegion } from '../engine/tsumego.js';
+import { score } from '../engine/score.js';
 
 export const VERDICT = {
   CORRECT: 'correct',   // 목표 달성
@@ -231,6 +232,30 @@ export class ProblemSession {
  * ------------------------------------------------------------------ */
 
 /**
+ * 지정한 범위 안에서 한 색의 집을 센다.
+ * box를 주지 않으면 반면 전체 — 다만 빈 반면에서는 열린 공간이 통째로 집으로 잡히므로,
+ * 포석 문제에서는 언제나 범위를 지정한다.
+ * @param {string[]} box ['A1','H8'] 처럼 두 모서리
+ */
+export function countTerritory(board, color, box, size = 19) {
+  const s = score(board, { rules: 'territory', komi: 0 });
+  let x0 = 0; let x1 = size - 1; let y0 = 0; let y1 = size - 1;
+  if (box && box.length === 2) {
+    const a = typeof box[0] === 'number' ? box[0] : fromLabel(box[0], size);
+    const b = typeof box[1] === 'number' ? box[1] : fromLabel(box[1], size);
+    x0 = Math.min(a % size, b % size); x1 = Math.max(a % size, b % size);
+    y0 = Math.min((a / size) | 0, (b / size) | 0); y1 = Math.max((a / size) | 0, (b / size) | 0);
+  }
+  let n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (s.territory[y * size + x] === color) n++;
+    }
+  }
+  return n;
+}
+
+/**
  * 완전탐색이 물러섰을 때 쓰는 국지 탐색의 예산.
  *
  * 둘러싸이지 않은 무리에 사활 목표를 걸면 국지 탐색이 그대로 돌아가는데,
@@ -427,6 +452,15 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
       if (goal.max != null && n > goal.max) return { achieved: false, reason: 'liberties' };
       return { achieved: true };
     }
+    case 'territory': {
+      // "이 수로 집이 몇 집이 되었는가" — 포석·끝내기에서 크기를 실제로 세기 위한 목표.
+      // score()가 "한 색으로만 둘러싸인 빈 점"을 집으로 센다. 봉쇄가 덜 되어 있으면
+      // 그 빈 곳은 양쪽에 닿아 공배가 되므로 자동으로 0집이 된다 — 그것이 정확한 판정이다.
+      const n = countTerritory(board, color, goal.box, size);
+      if (goal.min != null && n < goal.min) return { achieved: false, reason: 'small' };
+      if (goal.max != null && n > goal.max) return { achieved: false, reason: 'large' };
+      return { achieved: true };
+    }
     case 'point': {
       // 명시적으로 지정된 좋은 수들(모양 문제 등 엔진으로 판정하기 어려운 경우)
       const accept = (goal.accept || []).map(idxOf);
@@ -615,6 +649,25 @@ export function explainWrong(ctx) {
         detail: '눈이 될 자리를 미리 없애는 급소가 있는지 찾아보세요.',
       };
     }
+    case 'point': {
+      // 포석·모양 문제처럼 엔진이 유일 정답을 계산할 수 없는 경우.
+      // 그래도 "왜 아닌지"는 말해야 한다 — 문제에 적어 둔 기준을 그대로 돌려준다.
+      const accept = (goal.accept || []).map(idxOf);
+      return {
+        headline: goal.reason || '이 문제에서 찾는 자리가 아닙니다.',
+        detail: `이 국면에서 기준에 맞는 자리는 ${accept.length}곳입니다. 기준을 다시 읽고 세어 보세요.`,
+      };
+    }
+    case 'territory': {
+      const n = countTerritory(after, color, goal.box, size);
+      const want = goal.min != null ? `${goal.min}집 이상` : `${goal.max}집 이하`;
+      return {
+        headline: `이 수로는 ${n}집입니다. 목표는 ${want}입니다.`,
+        detail: n === 0
+          ? '아직 한쪽이 트여 있어 집이 되지 않았습니다. 상대가 들어올 수 있는 자리를 막아야 집으로 굳어집니다.'
+          : '막는 자리를 바꾸면 같은 한 수로 더 넓게 둘러쌀 수 있는지 확인해 보세요.',
+      };
+    }
     case 'liberties': {
       const g = goal.group != null ? idxOf(goal.group) : move;
       const n = after.cells[g] === EMPTY ? 0 : after.libertyCount(g);
@@ -698,6 +751,17 @@ export function findSolutions(problem, board, color, size = 19) {
 function solutionZone(problem, board, size) {
   const goal = problem.goal || {};
   const idxOf = (l) => (typeof l === 'number' ? l : fromLabel(l, size));
+
+  // 집 목표는 "범위 안에서 어디에 두는가"를 묻는 문제다. 후보는 그 범위 안의 빈 점.
+  if (goal.type === 'territory' && goal.box && goal.box.length === 2) {
+    const a = idxOf(goal.box[0]); const b = idxOf(goal.box[1]);
+    const x0 = Math.min(a % size, b % size); const x1 = Math.max(a % size, b % size);
+    const y0 = Math.min((a / size) | 0, (b / size) | 0); const y1 = Math.max((a / size) | 0, (b / size) | 0);
+    const zone = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) zone.push(y * size + x);
+    return zone;
+  }
+
   const anchors = [];
   for (const key of ['targets', 'group', 'a', 'b']) {
     const v = goal[key];

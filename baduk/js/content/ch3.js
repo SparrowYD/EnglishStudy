@@ -47,7 +47,7 @@ export const CHAPTER3 = [
         prompt: '흑 D4에서 **마늘모**로 나아가는 자리에 두세요.',
         setup: { black: ['D4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C5', 'E5', 'C3', 'E3'] },
+        goal: { type: 'point', accept: ['C5', 'E5', 'C3', 'E3'], reason: '마늘모는 내 돌에서 **대각선으로 한 칸** 나아가는 수입니다.' },
         comments: {
           E4: '옆으로 붙여 나간 뻗음입니다. 마늘모는 대각선입니다.',
           D5: '위로 붙여 나간 뻗음입니다.',
@@ -74,7 +74,7 @@ export const CHAPTER3 = [
         prompt: '백 D4가 아래 귀 쪽으로 나가려 합니다. **마늘모로 앞을 막으세요.**',
         setup: { black: ['D6', 'F5'], white: ['D4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['E5'] },
+        goal: { type: 'point', accept: ['E5'], reason: '이음자리는 두 흑돌 사이의 한 점입니다.' },
         comments: {
           D5: '바로 앞을 막는 것도 방법이지만, 이번에는 이미 있는 흑 D6·F5와 함께 힘을 쓰는 마늘모를 찾아보세요.',
           E4: '백에게 붙이는 수입니다. 붙이면 상대도 튼튼해집니다(LEVEL 11).',
@@ -333,7 +333,7 @@ export const CHAPTER3 = [
         prompt: '백 D4와 F4는 한 칸 떨어져 있습니다. 그 사이를 **들여다보는** 자리에 두세요.',
         setup: { white: ['D4', 'F4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['E5', 'E3'] },
+        goal: { type: 'point', accept: ['E5', 'E3'], reason: '들여다봄은 상대의 이음자리를 바로 옆에서 찌르는 수입니다.' },
         comments: {
           E4: '이것은 들여다봄이 아니라 곧바로 끊는 수입니다. 백 사이에 바로 들어가면 활로가 둘뿐이라 대개 잡힙니다(LEVEL 19).',
           C4: '백 옆에 붙인 수입니다. 사이의 빈틈을 노리는 수가 아닙니다.',
@@ -423,7 +423,7 @@ export const CHAPTER3 = [
         prompt: '3선의 백 D3을 **어깨짚으세요.** (대각선 바로 위)',
         setup: { white: ['D3'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C4', 'E4'] },
+        goal: { type: 'point', accept: ['C4', 'E4'], reason: '어깨짚기는 상대 돌의 **대각선 바로 위** 자리입니다.' },
         comments: {
           D4: '바로 위에 붙인 수입니다. 이것은 붙임이지 어깨짚기가 아닙니다.',
           E3: '옆에 붙인 수입니다.',
@@ -438,7 +438,7 @@ export const CHAPTER3 = [
         prompt: '오른쪽에 흑 세력이 있습니다. **흑 세력 쪽으로 백을 몰지 않는** 어깨를 짚으세요.',
         setup: { white: ['D3'], black: ['J4', 'J3'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['C4'] },
+        goal: { type: 'point', accept: ['C4'], reason: '어깨짚기는 상대 돌의 대각 위입니다. 그중 **내 세력 쪽으로 백을 몰지 않는** 방향이어야 합니다.' },
         comments: {
           E4: '오른쪽 어깨를 짚으면 백이 오른쪽으로 기어가는데, 그쪽에는 이미 흑 세력이 있습니다. 내 세력을 스스로 깎는 셈입니다.',
         },
@@ -452,7 +452,7 @@ export const CHAPTER3 = [
         prompt: '백이 아래 변에 넓게 자리 잡았습니다. 깊이 들어가지 말고 **어깨짚기로 삭감**하세요.',
         setup: { white: ['D3', 'G3', 'K3'], black: ['D10', 'K10'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['F4', 'H4', 'G4'] },
+        goal: { type: 'point', accept: ['F4', 'H4', 'G4'], reason: '어깨짚기는 상대 돌의 대각 위입니다. 깊이 들어가지 말고 위에서 누르세요.' },
         comments: {
           G2: '백 진영 깊숙이 들어간 수입니다. 2선은 살기도 어렵고 얻는 것도 적습니다.',
           H3: '백돌 옆에 붙는 수입니다. 붙이면 백이 튼튼해집니다.',
@@ -467,7 +467,7 @@ export const CHAPTER3 = [
         prompt: '3선의 백 Q3을 어깨짚어 중앙 쪽을 막으세요.',
         setup: { white: ['Q3'], black: ['K4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['P4', 'R4'] },
+        goal: { type: 'point', accept: ['P4', 'R4'], reason: '3선 백돌의 **대각 위(4선)** 자리입니다.' },
         explanation: 'P4나 R4가 어깨짚기입니다. 흑 K4가 왼쪽에 있으므로 실전이라면 P4 쪽이 호응이 좋습니다.',
       }),
     ],
@@ -508,7 +508,7 @@ export const CHAPTER3 = [
         prompt: '백 D4가 중앙으로 나오려 합니다. **모자를 씌우세요.** (바로 위 한 칸 띄어)',
         setup: { white: ['D4'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['D6'] },
+        goal: { type: 'point', accept: ['D6'], reason: '모자는 상대 돌에서 **한 칸 띄운 바로 위**입니다. 붙이는 것이 아닙니다.' },
         comments: {
           D5: '바로 위에 붙인 수입니다. 붙이면 백도 튼튼해집니다.',
           C6: '이것은 날일자 방향입니다. 모자는 정면 위입니다.',
@@ -524,7 +524,7 @@ export const CHAPTER3 = [
         prompt: '흑이 모자를 씌웠습니다. 백 입장이 되어, **옆으로 빠져나가는** 수를 두세요.',
         setup: { white: ['D4'], black: ['D6'] },
         toPlay: WHITE,
-        goal: { type: 'point', accept: ['C6', 'E6', 'F5', 'B5'] },
+        goal: { type: 'point', accept: ['C6', 'E6', 'F5', 'B5'], reason: '모자 아래에서는 위로 나가지 말고 **옆으로** 빠져나갑니다.' },
         comments: {
           D5: '정면으로 밀고 나가면 흑이 위에서 막아 계속 눌립니다.',
         },
@@ -538,7 +538,7 @@ export const CHAPTER3 = [
         prompt: '백 한 점이 흑 세력 근처에 외롭게 있습니다. **모자를 씌워** 공격을 시작하세요.',
         setup: { white: ['K4'], black: ['D4', 'Q4', 'K10'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['K6'] },
+        goal: { type: 'point', accept: ['K6'], reason: '모자는 상대 돌에서 위로 한 칸 띄운 자리입니다.' },
         comments: {
           K5: '붙이면 백이 튼튼해집니다. 공격할 때는 붙이지 않습니다(LEVEL 11).',
         },
@@ -552,7 +552,7 @@ export const CHAPTER3 = [
         prompt: '백 Q10에 모자를 씌워 위쪽 진출을 막으세요.',
         setup: { white: ['Q10'], black: ['Q16', 'D10'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['Q12'] },
+        goal: { type: 'point', accept: ['Q12'], reason: '모자는 상대 돌에서 위로 **한 칸 띄운** 자리입니다. 붙이거나 두 칸 띄우면 모자가 아닙니다.' },
         explanation: 'Q12가 모자입니다. 위쪽 흑 Q16과 호응해 백을 아래로 몰아붙입니다.',
       }),
     ],
@@ -592,7 +592,7 @@ export const CHAPTER3 = [
         prompt: '백 D4와 F5는 날일자입니다. 그 사이에 **건너붙이세요.**',
         setup: { white: ['D4', 'F5'], black: ['C6', 'G3'] },
         toPlay: BLACK,
-        goal: { type: 'point', accept: ['E5', 'E4'] },
+        goal: { type: 'point', accept: ['E5', 'E4'], reason: '건너붙임은 날일자 사이에서 **상대 돌에 닿게** 두는 수입니다.' },
         comments: {
           D5: '백돌 바로 위에 붙인 수입니다. 날일자 사이를 노리는 수가 아닙니다.',
           F4: '백돌 바로 아래에 붙인 수입니다.',

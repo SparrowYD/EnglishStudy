@@ -14,8 +14,9 @@ import { CHAPTER4 } from './ch4.js';
 import { CHAPTER5 } from './ch5.js';
 import { CHAPTER6 } from './ch6.js';
 import { CHAPTER7 } from './ch7.js';
+import { CHAPTER8 } from './ch8.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6, ...CHAPTER7];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6, ...CHAPTER7, ...CHAPTER8];
 
 export const TOTAL_LEVELS = 100;
 
@@ -57,9 +58,8 @@ export const CHAPTERS = [
     summary: '활로 계산·안팎 공배·유가무가·빅·패 사활·귀곡사·육사팔활.',
   },
   {
-    id: 8, range: [71, 80], title: '포석과 전판 전략', ready: false,
+    id: 8, range: [71, 80], title: '포석과 전판 전략', ready: true,
     summary: '선귀후변중앙·3선과 4선·화점과 소목·벌림·갈라치기·걸침·협공·세력.',
-    titles: ['선귀후변중앙', '3선과 4선', '화점과 소목', '벌림', '갈라치기', '걸침', '협공', '세력은 공격에 활용', '아생연후살타', '포석 종합시험'],
   },
   {
     id: 9, range: [81, 90], title: '실전 전략과 위기십결', ready: false,
