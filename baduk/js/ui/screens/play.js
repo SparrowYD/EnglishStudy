@@ -411,14 +411,28 @@ export function freePlayScreen(app) {
         playerWhite: myColor === WHITE ? '나' : `컴퓨터(${cfg.aiKyu}급)`,
       }),
     });
+    // 스테이지의 실전 대국 단계에서 온 대국이면 결과를 그 단계에 돌려준다(LEVEL 99).
+    const stageMatch = app.transfer.stageMatch;
+    if (stageMatch && won) app.progress.recordStageMatch(stageMatch.levelId);
     setChildren(infoBox, card(
       el('h2', { text: won ? '이겼습니다!' : '졌습니다' }),
       el('p', { text: result.text }),
+      stageMatch
+        ? el('p', { class: 'faint', text: won
+          ? `LEVEL ${stageMatch.levelId}의 실전 대국을 통과했습니다.`
+          : `LEVEL ${stageMatch.levelId}의 실전 대국은 아직 통과하지 못했습니다. 복기하고 다시 도전해 보세요.` })
+        : null,
       el('div', { class: 'row' },
         button('복기하기', () => app.go('/review', {
           reviewGame: { game, myColor, aiKyu: cfg.aiKyu },
         }), { variant: 'primary' }),
-        button('한 판 더', () => app.go('/play'), {}),
+        stageMatch
+          ? button('스테이지로 돌아가기', () => {
+            const id = stageMatch.levelId;
+            app.transfer.stageMatch = null;
+            app.go(`/stage/${id}`);
+          }, {})
+          : button('한 판 더', () => app.go('/play'), {}),
         button('메인으로', () => app.go('/menu'), { variant: 'ghost' }),
       ),
     ));

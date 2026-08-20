@@ -46,6 +46,7 @@ function emptyState() {
       lifeDeathAttempted: 0,
     },
     games: [],           // 자유대국 기록 (최근 것이 뒤)
+    stageMatches: {},    // 실전 대국 단계를 통과한 LEVEL (LEVEL 99)
     reviews: {},         // problemId -> {due, interval, ease, lapses}
     myProblems: [],      // 내 대국에서 나온 문제
     settings: {
@@ -203,6 +204,20 @@ export class Progress {
 
   recentGames(n = 10) {
     return this.state.games.slice(-n);
+  }
+
+  /**
+   * 스테이지의 실전 대국 단계(LEVEL 99)를 통과했는지 기록한다.
+   * 화면을 옮겨 다니는 사이 세션이 사라지므로 저장소에 남긴다.
+   */
+  recordStageMatch(levelId) {
+    if (!this.state.stageMatches) this.state.stageMatches = {};
+    this.state.stageMatches[String(levelId)] = Date.now();
+    this.save();
+  }
+
+  stageMatchDone(levelId) {
+    return !!(this.state.stageMatches && this.state.stageMatches[String(levelId)]);
   }
 
   /**

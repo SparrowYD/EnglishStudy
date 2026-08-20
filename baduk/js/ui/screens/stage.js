@@ -176,6 +176,7 @@ function stepView(app, stage, step, handlers) {
     case STEP.CONCEPT: return conceptView(app, step, handlers);
     case STEP.FOLLOW: return followView(app, step, handlers);
     case STEP.QUIZ: return quizView(app, stage, step, handlers);
+    case STEP.MATCH: return matchView(app, stage, step, handlers);
     default: return problemView(app, stage, step, handlers);
   }
 }
@@ -373,6 +374,55 @@ function followView(app, step, handlers) {
 }
 
 /* ---------------- 퀴즈 ---------------- */
+
+/**
+ * 실전 대국 단계(요구사항 54의 LEVEL 99).
+ *
+ * 대국 화면은 별도 화면이므로 스테이지 세션이 사라진다. 그래서 통과 여부는
+ * progress(localStorage)에 남기고, 돌아왔을 때 그 기록을 읽어 단계를 연다.
+ */
+function matchView(app, stage, step, handlers) {
+  const levelId = stage.level.id;
+  const done = app.progress.stageMatchDone(levelId);
+  const kyu = step.aiKyu != null ? step.aiKyu : 10;
+
+  const start = () => {
+    app.transfer.gameConfig = {
+      size: 19,
+      myColor: 'black',
+      aiKyu: kyu,
+      komi: step.komi != null ? step.komi : 6.5,
+      handicap: step.handicap || 0,
+      time: 0,
+      teacher: false,
+      engine: 'local',
+    };
+    app.transfer.stageMatch = { levelId, aiKyu: kyu };
+    app.go('/game');
+  };
+
+  return el('div', { class: 'wrap' },
+    card(
+      el('h2', { text: step.title || '실전 대국' }),
+      ...(step.body || []).map((t) => el('p', {}, rich(t))),
+      el('div', { class: 'kv' },
+        el('div', {}, el('span', { class: 'faint', text: '반면' }), el('b', { text: '19×19' })),
+        el('div', {}, el('span', { class: 'faint', text: '상대' }), el('b', { text: `내장 AI ${kyu}급` })),
+        el('div', {}, el('span', { class: 'faint', text: '내 색' }), el('b', { text: '흑' })),
+        el('div', {}, el('span', { class: 'faint', text: '통과 조건' }), el('b', { text: '한 판 이기기' })),
+      ),
+      done
+        ? el('div', { class: 'feedback good' },
+          el('div', { class: 'head', text: '실전 대국을 통과했습니다' }),
+          el('div', { text: '이 조건으로 이긴 기록이 남아 있습니다.' }))
+        : el('p', { class: 'faint', text: '대국이 끝나면 이 화면으로 돌아옵니다. 결과는 프로필에 남습니다. 이 단계는 **별 계산에 들어가지 않으니** 나중에 도전해도 됩니다.' }),
+      el('div', { class: 'row', style: { marginTop: '12px' } },
+        button(done ? '다시 두어 보기' : '대국 시작', start, { variant: done ? 'ghost' : 'primary' }),
+        button(done ? '다음 →' : '나중에 도전하고 넘어가기', () => handlers.onDone(), { variant: done ? 'primary' : 'ghost' }),
+      ),
+    ),
+  );
+}
 
 function quizView(app, stage, step, handlers) {
   const feedback = el('div', {});

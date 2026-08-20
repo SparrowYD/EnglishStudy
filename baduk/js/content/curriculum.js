@@ -15,8 +15,10 @@ import { CHAPTER5 } from './ch5.js';
 import { CHAPTER6 } from './ch6.js';
 import { CHAPTER7 } from './ch7.js';
 import { CHAPTER8 } from './ch8.js';
+import { CHAPTER9 } from './ch9.js';
+import { CHAPTER10 } from './ch10.js';
 
-export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6, ...CHAPTER7, ...CHAPTER8];
+export const LEVELS = [...CHAPTER1, ...CHAPTER2, ...CHAPTER3, ...CHAPTER4, ...CHAPTER5, ...CHAPTER6, ...CHAPTER7, ...CHAPTER8, ...CHAPTER9, ...CHAPTER10];
 
 export const TOTAL_LEVELS = 100;
 
@@ -62,14 +64,12 @@ export const CHAPTERS = [
     summary: '선귀후변중앙·3선과 4선·화점과 소목·벌림·갈라치기·걸침·협공·세력.',
   },
   {
-    id: 9, range: [81, 90], title: '실전 전략과 위기십결', ready: false,
+    id: 9, range: [81, 90], title: '실전 전략과 위기십결', ready: true,
     summary: '부득탐승부터 세고취화까지, 격언을 상황 판단으로 바꾸는 훈련.',
-    titles: ['부득탐승', '입계의완', '공피고아', '기자쟁선', '사소취대', '봉위수기', '신물경속', '동수상응', '피강자보 + 세고취화', '위기십결 종합 BOSS'],
   },
   {
-    id: 10, range: [91, 100], title: '끝내기·계산·실전 완성', ready: false,
+    id: 10, range: [91, 100], title: '끝내기·계산·실전 완성', ready: true,
     summary: '선수와 후수·끝내기의 크기·역끝내기·형세판단·19×19 실전과 FINAL BOSS.',
-    titles: ['선수와 후수', '끝내기의 크기', '선수 끝내기', '후수 끝내기', '역끝내기', '끝내기 우선순위', '선수와 끝내기 가치 계산', '형세판단', '19×19 AI 실전시험', 'FINAL BOSS'],
   },
 ];
 

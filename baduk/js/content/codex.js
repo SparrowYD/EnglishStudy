@@ -274,6 +274,91 @@ const EXTRA = {
     pros: ['공격 전에 한 번 멈춰 서게 만든다. 무너지는 판의 대부분이 이 확인을 건너뛴 결과다.'],
     mistakes: ['공격이 즐거워 내 약점을 세지 않는다.', '반대로 너무 조심해서 다 살고 나서야 두려 한다.'],
   },
+  '부득탐승(不得貪勝)': {
+    category: 'strategy',
+    pros: ['앞설 때 판을 흔들지 않게 해 준다. 이길 판을 스스로 망치는 일이 줄어든다.'],
+    mistakes: ['지고 있는데도 안전하게만 두어 진 채로 끝낸다.', '형세 판단 없이 태도만 정한다.'],
+  },
+  '입계의완(入界宜緩)': {
+    category: 'strategy',
+    pros: ['삭감한 돌이 바깥과 이어져 안전하고, 상대 집은 확실히 줄어든다.'],
+    mistakes: ['굳어진 진영에 깊이 뛰어들어 잡힌다.', '반대로 엉성한 진영에도 얕게만 두어 상대 집을 다 인정한다.'],
+  },
+  '공피고아(攻彼顧我)': {
+    category: 'strategy',
+    pros: ['공격이 헛수가 되는 것을 막는다. 무너지는 판의 대부분이 이 확인을 건너뛴 결과다.'],
+    mistakes: ['상대가 약해 보이면 내 약점을 세지 않는다.', '반대로 모든 약점을 메우려다 판이 느려진다.'],
+  },
+  '기자쟁선(棄子爭先)': {
+    category: 'strategy',
+    pros: ['돌 몇 점의 값과 큰 곳의 값을 비교하게 된다. 선수의 개념이 잡힌다.'],
+    mistakes: ['상대가 무시할 수 있는 수를 선수라고 착각한다.', '끊는 돌·눈자리 돌까지 버린다.'],
+  },
+  '사소취대(捨小取大)': {
+    category: 'strategy',
+    pros: ['감이 아니라 숫자로 고르게 된다.'],
+    mistakes: ['급한 곳을 두고 큰 곳부터 둔다.', '익숙한 쪽을 큰 곳이라고 여긴다.'],
+  },
+  '봉위수기(逢危須棄)': {
+    category: 'strategy',
+    pros: ['잡힐 돌을 끌고 다니며 손해를 키우는 일이 없어진다.'],
+    mistakes: ['상대를 끊고 있는 돌을 돌 수만 보고 버린다.', '그냥 버리기만 하고 대가를 챙기지 않는다.'],
+  },
+  '신물경속(愼勿輕速)': {
+    category: 'strategy',
+    pros: ['약점 하나로 판이 무너지는 것을 막는다. 느린 한 수가 열 수를 산다.'],
+    mistakes: ['약점을 전부 메우려다 판이 좁아진다.', '약점의 크기를 세지 않는다.'],
+  },
+  '동수상응(動須相應)': {
+    category: 'strategy',
+    pros: ['걸침·벌림의 방향을 정하는 기준이 생긴다.'],
+    mistakes: ['어울림만 따져 좁은 쪽으로만 둔다.', '따로 노는 돌을 만들어 하나씩 공격당한다.'],
+  },
+  '피강자보(彼强自保) · 세고취화(勢孤取和)': {
+    category: 'strategy',
+    pros: ['불리한 싸움을 피해 손해를 최소로 막는다.'],
+    mistakes: ['상대가 강한 곳에서 반격을 노리다 통째로 잡힌다.', '살기만 하고 상대에게 완벽한 두터움을 준다.'],
+  },
+  '선수와 후수': {
+    category: 'endgame',
+    pros: ['같은 크기의 자리라도 순서를 바꿔 몇 집을 벌 수 있다.'],
+    mistakes: ['상대가 받지 않아도 되는 수를 선수라고 여긴다.', '선수를 아무 때나 써서 뒷맛을 없앤다.'],
+  },
+  '끝내기의 크기': {
+    category: 'endgame',
+    pros: ['처음 보는 모양에서도 스스로 크기를 정할 수 있다.'],
+    mistakes: ['"내가 두면 얼마"만 세고 상대가 두었을 때를 세지 않는다.', '크기만 보고 선수·후수를 무시한다.'],
+  },
+  '선수 끝내기': {
+    category: 'endgame',
+    pros: ['두고도 차례가 남아 사실상 공짜로 집을 얻는다.'],
+    mistakes: ['상대가 무시할 만큼 작은 수를 선수로 착각한다.', '나중에 엮어 쓸 자리를 미리 소모한다.'],
+  },
+  '후수 끝내기': {
+    category: 'endgame',
+    pros: ['크기 순으로 정리하면 되므로 판단이 단순하다.'],
+    mistakes: ['작은 후수를 먼저 두어 큰 곳을 내준다.', '아직 사활이 남았는데 끝내기부터 한다.'],
+  },
+  '역끝내기': {
+    category: 'endgame',
+    pros: ['내 집을 늘리면서 상대의 공짜를 동시에 없앤다.'],
+    mistakes: ['내 선수가 남아 있는데 역끝내기부터 둔다.', '후수라는 것을 잊고 크기를 과대평가한다.'],
+  },
+  '끝내기의 순서': {
+    category: 'endgame',
+    pros: ['순서만 지켜도 끝내기에서 몇 집을 번다.'],
+    mistakes: ['사활이 남아 있는데 끝내기 순서를 적용한다.'],
+  },
+  '끝내기 가치 계산': {
+    category: 'endgame',
+    pros: ['선수와 후수를 같은 단위로 비교할 수 있게 된다.'],
+    mistakes: ['두 배라는 어림을 정확한 값으로 여긴다.'],
+  },
+  '형세판단': {
+    category: 'endgame',
+    pros: ['앞서는지 뒤지는지를 알아야 전략을 고를 수 있다. 부득탐승의 전제다.'],
+    mistakes: ['세력을 집으로 세어 형세를 착각한다.', '사석과 덤을 빠뜨린다.'],
+  },
   '팻감': {
     category: 'tactic',
     pros: ['상대가 받는 사이에 패를 되따낼 수 있다. 팻감 수가 곧 패의 승부다.'],
@@ -298,14 +383,6 @@ export const UPCOMING = [
   { name: '환격', category: 'tactic', kind: KIND.TESUJI, level: 37, definition: '한 점을 일부러 잡히게 한 뒤 되잡는 수법.' },
   { name: '먹여치기', category: 'tactic', kind: KIND.TESUJI, level: 38, definition: '상대 활로를 줄이려고 일부러 돌을 던져 넣는 수.' },
   { name: '자충 유도', category: 'tactic', kind: KIND.TESUJI, level: 39, definition: '상대가 스스로 자기 활로를 메우게 만드는 기술.' },
-  { name: '부득탐승', category: 'strategy', kind: KIND.STRATEGY, level: 81, definition: '승리를 지나치게 탐내 무리하지 않는다.' },
-  { name: '입계의완', category: 'strategy', kind: KIND.STRATEGY, level: 82, definition: '상대 진영에 들어갈 때 지나치게 깊이 들어가지 않는다.' },
-  { name: '사소취대', category: 'strategy', kind: KIND.STRATEGY, level: 85, definition: '작은 이득을 버리고 큰 곳을 차지한다.' },
-  { name: '봉위수기', category: 'strategy', kind: KIND.STRATEGY, level: 86, definition: '위험에 처한 돌은 과감히 버린다. 모든 돌을 살리려 하지 않는다.' },
-  { name: '선수와 후수', category: 'endgame', kind: KIND.STRATEGY, level: 91, definition: '상대가 반드시 받아야 하는 수가 선수. 선수를 쥐면 다음 큰 곳을 먼저 둘 수 있다.' },
-  { name: '끝내기의 크기', category: 'endgame', kind: KIND.STRATEGY, level: 92, definition: '착수 전후의 집 차이로 크기를 계산한다. 외우는 것이 아니라 세는 것이다.' },
-  { name: '역끝내기', category: 'endgame', kind: KIND.STRATEGY, level: 95, definition: '상대가 두면 선수로 큰 이득을 얻는 자리를 내가 먼저 차지하는 것.' },
-  { name: '형세판단', category: 'endgame', kind: KIND.STRATEGY, level: 98, definition: '확정된 집과 세력을 어림해 지금 누가 앞서는지 판단하는 것.' },
 ];
 
 /** 도감 전체 항목. LEVEL로 구현된 것이 앞에 오고, 준비 중 항목이 뒤에 온다. */

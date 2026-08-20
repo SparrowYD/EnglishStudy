@@ -16,6 +16,7 @@ export const STEP = {
   PRACTICE: 'practice', // 실전에서 나올 법한 형태
   BOSS: 'boss',         // 힌트 없이
   QUIZ: 'quiz',         // 개념 확인(종합시험 등)
+  MATCH: 'match',       // 내장 AI와의 실전 대국(요구사항 54의 LEVEL 99)
 };
 
 export const STEP_LABEL = {
@@ -26,6 +27,7 @@ export const STEP_LABEL = {
   [STEP.PRACTICE]: '실전 문제',
   [STEP.BOSS]: 'BOSS 문제',
   [STEP.QUIZ]: '개념 확인',
+  [STEP.MATCH]: '실전 대국',
 };
 
 /** BOSS 단계에서는 힌트·정답 보기를 쓸 수 없다. */
@@ -34,8 +36,14 @@ export function hintsAllowed(step) {
 }
 
 /** 별 산정에 반영되는 "핵심 문제" — 개념/따라두기는 제외한다. */
+/**
+ * 별 계산에 들어가는 단계인가.
+ * 실전 대국(MATCH)은 결과를 기록하되 별에는 넣지 않는다 —
+ * 한 판을 이겨야만 커리큘럼이 열리면 진도가 막히기 때문이다.
+ * 대신 통과 여부를 화면과 프로필에 남겨 "도전 과제"로 다룬다.
+ */
 export function isScored(step) {
-  return step.type !== STEP.CONCEPT && step.type !== STEP.FOLLOW;
+  return step.type !== STEP.CONCEPT && step.type !== STEP.FOLLOW && step.type !== STEP.MATCH;
 }
 
 export class StageSession {

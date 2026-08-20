@@ -55,6 +55,14 @@ export const variant = (p) => problemStep(STEP.VARIANT, p);
 export const practice = (p) => problemStep(STEP.PRACTICE, p);
 export const boss = (p) => problemStep(STEP.BOSS, p);
 
+/**
+ * 실전 대국 단계(LEVEL 99). 내장 AI와 19×19 한 판을 둔다.
+ * 별 계산에는 들어가지 않고 도전 과제로 기록된다.
+ */
+export function match({ title, body = [], aiKyu = 10, komi = 6.5, handicap = 0 }) {
+  return { type: STEP.MATCH, title, body, aiKyu, komi, handicap };
+}
+
 export function level({ id, chapter, title, subtitle, formula: f = null, steps }) {
   return { id, chapter, title, subtitle, formula: f, steps };
 }

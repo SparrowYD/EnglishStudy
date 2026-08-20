@@ -144,6 +144,28 @@ for (const [hash, name] of [['/rank', '기력 분석'], ['/settings', '설정'],
 }
 await shot('10-settings');
 
+// LEVEL 99의 실전 대국 단계 — 대국 화면으로 갔다가 스테이지로 돌아오는 길까지 확인한다
+await page.goto(`${BASE}/#/menu`, { waitUntil: 'load' });
+await page.evaluate(() => {
+  const levels = {};
+  for (let i = 1; i <= 100; i++) levels[i] = { stars: 3, done: true, at: Date.now() };
+  localStorage.setItem('baduk100.progress.v1', JSON.stringify({ levels, games: [], stageMatches: {} }));
+});
+await page.goto(`${BASE}/#/stage/99`, { waitUntil: 'load' });
+await page.reload({ waitUntil: 'load' });
+await page.waitForTimeout(300);
+await page.getByRole('button', { name: '다음 →' }).click();
+await page.waitForTimeout(250);
+check('실전 대국 단계 — 대국 시작 버튼', await page.getByRole('button', { name: '대국 시작' }).count() > 0);
+await page.getByRole('button', { name: '대국 시작' }).click();
+await page.waitForTimeout(700);
+check('실전 대국 — 대국 화면 진입', page.url().includes('/game') && await page.locator('canvas').count() > 0);
+await page.getByRole('button', { name: '돌 던지기' }).click();
+await page.waitForTimeout(250);
+await page.getByRole('button', { name: '기권' }).click();
+await page.waitForTimeout(600);
+check('실전 대국 — 스테이지로 돌아가는 길', await page.getByRole('button', { name: '스테이지로 돌아가기' }).count() > 0);
+
 await browser.close();
 
 console.log('');
@@ -152,5 +174,6 @@ if (errors.length) {
   for (const e of [...new Set(errors)]) console.log('  ! ' + e.slice(0, 200));
 }
 const failed = results.filter((r) => !r.ok).length;
+
 console.log(`검사 ${results.length}개 중 실패 ${failed}개, 콘솔 오류 ${errors.length}건`);
 process.exit(failed || errors.length ? 1 : 0);

@@ -85,6 +85,10 @@ for (let id = 1; id <= LAST; id++) {
       }, [id, st.index]);
       for (const idx of seq) await clickPoint(idx);
       await page.waitForTimeout(700);
+    } else if (st.type === 'match') {
+      // 실전 대국 단계는 자동으로 둘 수 없다. 별에 들어가지 않으므로 넘어간다.
+      await page.getByRole('button', { name: '나중에 도전하고 넘어가기' }).click();
+      await page.waitForTimeout(150);
     } else if (st.type === 'quiz') {
       const answer = await page.evaluate(async ([lid, si]) => {
         const { getLevel } = await import('/js/content/curriculum.js');
