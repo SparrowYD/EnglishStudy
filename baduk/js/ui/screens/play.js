@@ -195,7 +195,7 @@ export function freePlayScreen(app) {
   // 엔진 준비 — KataGo가 있으면 쓰고, 없으면 조용히 내장 AI로 간다
   registry.create('katago', { kyu: cfg.aiKyu }).then(({ engine: e, key, fallback, notes }) => {
     engine = e;
-    engineLabel = key === 'katago' ? 'KataGo' : '내장 AI';
+    engineLabel = key === 'katago' ? (e.name || 'KataGo') : '내장 AI';
     if (fallback && notes.length) {
       console.info('[바둑100] AI 엔진 선택:', notes.join(' / '));
     }

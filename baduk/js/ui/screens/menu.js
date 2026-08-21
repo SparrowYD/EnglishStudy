@@ -5,6 +5,7 @@ import { rankAnalysis, pointsForKyu } from '../../game/progress.js';
 import { LEVELS, TOTAL_LEVELS, IMPLEMENTED } from '../../content/curriculum.js';
 import { RANK_DISCLAIMER, RANK_NOTES, KYU_LIST } from '../../ai/ranks.js';
 import { generateLadderProblem } from '../../game/reading.js';
+import { KataGoAdapter } from '../../ai/KataGoAdapter.js';
 
 export function topbar(app, title, extra) {
   return el('div', { class: 'topbar' },
@@ -260,7 +261,31 @@ export function settingsScreen(app) {
             },
           }),
         ),
-        el('p', { class: 'faint' }, rich('`node tools/gtp-bridge.js --katago <실행파일> --model <모델>` 로 중계 서버를 띄울 수 있습니다.')),
+        el('div', { class: 'row', style: { marginTop: '10px' } },
+          button('연결 확인', async (ev) => {
+            const btn = ev.currentTarget;
+            const endpoint = readKataGo();
+            if (!endpoint) { toast('먼저 중계 서버 주소를 입력하세요.', 'bad'); return; }
+            btn.disabled = true;
+            const prev = btn.textContent;
+            btn.textContent = '확인 중…';
+            try {
+              const adapter = new KataGoAdapter({ endpoint });
+              const res = await adapter.available();
+              // 되든 안 되든 **이유를 그대로** 보여 준다(요구사항 59·79).
+              // 붙어 있는 것이 KataGo가 아니면 그 이름을 그대로 말한다.
+              toast(
+                res.ok ? `연결됐습니다. 자유대국에서 ${adapter.name}을(를) 씁니다.` : res.reason,
+                res.ok ? 'good' : 'bad',
+              );
+            } finally {
+              btn.disabled = false;
+              btn.textContent = prev;
+            }
+          }),
+        ),
+        el('p', { class: 'faint' }, rich('중계 서버 띄우기: `node tools/gtp-bridge.js --katago <실행파일> --model <모델>`')),
+        el('p', { class: 'faint' }, rich('KataGo가 없어도 중계 경로만 확인해 볼 수 있습니다: `node tools/gtp-bridge.js --engine node tools/gtp-engine.js`')),
       ),
     ),
 

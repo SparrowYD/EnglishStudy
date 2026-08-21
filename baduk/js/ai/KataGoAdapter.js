@@ -31,6 +31,8 @@ export class KataGoAdapter extends AIEngine {
     this.endpoint = opts.endpoint || detectEndpoint();
     this.timeout = opts.timeout || 15000;
     this.sessionId = null;
+    this.engineName = '';
+    this.analysisSupported = true;
     this.cfg = rankConfig(opts.kyu != null ? opts.kyu : 10);
   }
 
@@ -46,6 +48,12 @@ export class KataGoAdapter extends AIEngine {
       if (!res || !res.ready) {
         return { ok: false, reason: res?.reason || 'KataGo가 준비되지 않았습니다.' };
       }
+      // 중계 서버 뒤에 있는 것이 정말 KataGo인지 알려 준다.
+      // 다른 GTP 엔진을 붙여 놓고 화면에는 "KataGo"라고 적는 것은 거짓말이다(요구사항 79).
+      this.engineName = (res.name || '').trim();
+      this.name = /katago/i.test(this.engineName) ? 'KataGo'
+        : this.engineName ? `외부 엔진(${this.engineName})` : '외부 엔진';
+      this.analysisSupported = res.analysis !== false;
       return { ok: true };
     } catch (e) {
       return { ok: false, reason: `KataGo 중계 서버에 연결할 수 없습니다 (${e.message}).` };

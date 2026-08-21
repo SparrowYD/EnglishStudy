@@ -3,6 +3,31 @@
  * 실제 브라우저로 모든 화면을 열어 콘솔 오류가 없는지, 핵심 동작이 되는지 확인한다.
  */
 import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** GTP 중계 서버를 임의 포트로 띄운다. 내장 AI를 GTP 엔진으로 써서 KataGo 없이도 확인한다. */
+function startBridge() {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(process.execPath, [path.join(ROOT, 'tools/gtp-bridge.js'), '--port', '0'], {
+      cwd: ROOT,
+      env: { ...process.env, BADUK_GTP_ENGINE: `${process.execPath} ${path.join(ROOT, 'tools/gtp-engine.js')}` },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let out = '';
+    const timer = setTimeout(() => reject(new Error('중계 서버가 뜨지 않았습니다')), 15000);
+    proc.stdout.setEncoding('utf8');
+    proc.stdout.on('data', (c) => {
+      out += c;
+      const m = out.match(/GTP-BRIDGE-PORT (\d+)/);
+      if (m) { clearTimeout(timer); resolve({ proc, endpoint: `http://127.0.0.1:${m[1]}` }); }
+    });
+    proc.on('error', (e) => { clearTimeout(timer); reject(e); });
+  });
+}
 
 const BASE = process.argv[2] || 'http://localhost:8099';
 const shots = process.env.SHOTS || '';
@@ -165,6 +190,37 @@ await page.waitForTimeout(250);
 await page.getByRole('button', { name: '기권' }).click();
 await page.waitForTimeout(600);
 check('실전 대국 — 스테이지로 돌아가는 길', await page.getByRole('button', { name: '스테이지로 돌아가기' }).count() > 0);
+
+// KataGo 연결 — 버튼이 정말 동작하는지, 실패 이유를 정직하게 말하는지 확인한다(요구사항 59·79).
+// 브라우저에서 실제로 왕복시키므로 CORS까지 함께 검증된다.
+await page.goto(`${BASE}/#/settings`, { waitUntil: 'load' });
+await page.waitForTimeout(200);
+check('설정 — KataGo 연결 확인 버튼', await page.getByRole('button', { name: '연결 확인' }).count() > 0);
+await page.getByRole('button', { name: '연결 확인' }).click();
+await page.waitForTimeout(300);
+check('주소가 없으면 이유를 말한다', ((await page.textContent('.toasts')) || '').includes('주소를 입력'));
+
+const bridge = await startBridge();
+try {
+  await page.evaluate((url) => localStorage.setItem('baduk100.katago.endpoint', url), bridge.endpoint);
+  await page.goto(`${BASE}/#/settings`, { waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  await page.getByRole('button', { name: '연결 확인' }).click();
+  await page.waitForTimeout(1500);
+  const toastText = (await page.textContent('.toasts')) || '';
+  check('중계 서버에 실제로 연결된다', toastText.includes('연결됐습니다') && toastText.includes('baduk100-local'), toastText.slice(0, 60));
+
+  // 붙은 엔진이 KataGo가 아니면 화면에도 그렇게 적혀야 한다
+  await page.goto(`${BASE}/#/play`, { waitUntil: 'load' });
+  await page.waitForTimeout(200);
+  await page.getByRole('button', { name: '대국 시작' }).click();
+  await page.waitForTimeout(2500);
+  const sideText = (await page.textContent('.side')) || '';
+  check('붙은 엔진 이름을 정직하게 표시한다', sideText.includes('baduk100-local'), sideText.replace(/\s+/g, ' ').slice(0, 80));
+} finally {
+  bridge.proc.kill();
+  await page.evaluate(() => localStorage.removeItem('baduk100.katago.endpoint'));
+}
 
 await browser.close();
 
