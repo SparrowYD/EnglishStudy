@@ -17,7 +17,7 @@ import {
   canCapture, defenderCanEscape, readLadder, isSelfAtari, isTrueEye, eyeCount,
   isSafelyConnected, isConnected, canConnectNow, groupsInAtari, neighborhood,
 } from '../engine/analysis.js';
-import { survives, eyeRegion } from '../engine/tsumego.js';
+import { lifeStatus, eyeRegion, ALIVE, DEAD, KO } from '../engine/tsumego.js';
 import { score } from '../engine/score.js';
 
 export const VERDICT = {
@@ -340,10 +340,12 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
       if (goal.minLiberties && board.libertyCount(g) < goal.minLiberties) {
         return { achieved: false, reason: 'few-liberties' };
       }
-      const safe = survives(board, g, enemy, () => !canCapture(
+      const st = lifeStatus(board, g, enemy, () => !canCapture(
         board, g, enemy, { maxDepth: depth, maxNodes: goal.maxNodes || 30000 },
       ).captured);
-      return safe ? { achieved: true } : { achieved: false, reason: 'still-caught' };
+      if (st === ALIVE) return { achieved: true };
+      // 패로 버티는 것은 "달아났다"가 아니다 — 팻감 싸움이 남아 있다.
+      return { achieved: false, reason: st === KO ? 'ko-only' : 'still-caught' };
     }
     case 'connect': {
       const a = idxOf(goal.a);
@@ -371,19 +373,25 @@ export function evaluateGoal(problem, initial, board, color, size = 19) {
         if (eyeCount(board, grp) >= 2) return { achieved: true };
       }
       // 둘러싸인 모양이면 완전탐색으로 정확히 판정하고, 아니면 국지 탐색으로 넘어간다.
-      const alive = survives(board, g, enemy, () => !canCapture(
+      const st = lifeStatus(board, g, enemy, () => !canCapture(
         board, g, enemy, fallbackBudget(board, g, goal),
       ).captured);
-      return alive ? { achieved: true } : { achieved: false, reason: 'killed' };
+      if (st === ALIVE) return { achieved: true };
+      // 패는 삶이 아니다. 다만 "패로 버티는 것이 최선"인 문제는 goal.allowKo로 인정한다.
+      if (st === KO) return goal.allowKo ? { achieved: true } : { achieved: false, reason: 'ko-only' };
+      return { achieved: false, reason: 'killed' };
     }
     case 'kill': {
       const g = idxOf(goal.group);
       if (board.cells[g] === EMPTY) return { achieved: true };
       // 착수 직후 = 상대 차례. 상대가 살릴 수 있으면 아직 잡은 것이 아니다.
-      const alive = survives(board, g, enemy, () => defenderCanEscape(
+      const st = lifeStatus(board, g, enemy, () => defenderCanEscape(
         board, g, color, fallbackBudget(board, g, goal),
       ));
-      return alive ? { achieved: false, reason: 'alive' } : { achieved: true };
+      if (st === DEAD) return { achieved: true };
+      // 패로 몰아 놓은 것은 아직 잡은 것이 아니다(goal.allowKo면 인정한다).
+      if (st === KO) return goal.allowKo ? { achieved: true } : { achieved: false, reason: 'ko-only-kill' };
+      return { achieved: false, reason: 'alive' };
     }
     case 'ko': {
       // 패를 만들었는가. 방금 한 점을 따내 되따내기가 금지된 상태가 패다.
@@ -579,6 +587,12 @@ export function explainWrong(ctx) {
     }
     case 'escape': {
       const g = idxOf(goal.group);
+      if (goalResult?.reason === 'ko-only') {
+        return {
+          headline: '패로 버틸 수는 있지만 달아난 것은 아닙니다.',
+          detail: '팻감 싸움에 지면 그대로 잡힙니다. 패에 기대지 않고 살아 나가는 길을 찾아보세요.',
+        };
+      }
       if (after.cells[g] !== color) {
         return { headline: '내 돌이 잡혔습니다.', detail: '달아나는 방향을 다시 생각해 봅시다.' };
       }
@@ -627,6 +641,12 @@ export function explainWrong(ctx) {
     }
     case 'live': {
       const g = idxOf(goal.group);
+      if (goalResult?.reason === 'ko-only') {
+        return {
+          headline: '패가 남습니다 — 아직 산 것이 아닙니다.',
+          detail: '지금 모양은 팻감 싸움에 이겨야만 살 수 있습니다. 패 없이 확실하게 두 눈을 내는 자리를 찾아보세요.',
+        };
+      }
       if (after.cells[g] !== color) return { headline: '내 돌이 잡혔습니다.', detail: '' };
       const r = canCapture(after, g, enemy, { maxDepth: 10, maxNodes: 60000 });
       if (r.captured) {
@@ -639,6 +659,12 @@ export function explainWrong(ctx) {
     }
     case 'kill': {
       const g = idxOf(goal.group);
+      if (goalResult?.reason === 'ko-only-kill') {
+        return {
+          headline: '패로 몰았을 뿐, 아직 잡은 것이 아닙니다.',
+          detail: '상대는 팻감을 써서 버틸 수 있습니다. 패 없이 확실하게 죽이는 급소가 따로 있습니다.',
+        };
+      }
       if (after.cells[g] === EMPTY) break;
       const grp = after.group(g);
       const eyes = eyeCount(after, grp);
