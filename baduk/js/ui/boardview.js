@@ -6,6 +6,7 @@
  */
 
 import { BLACK, WHITE, EMPTY, toLabel, starPoints, COLUMNS } from '../engine/board.js';
+import { SEKI } from '../engine/score.js';
 
 const WOOD = '#e7bb74';
 const WOOD_DARK = '#d9a75c';
@@ -324,8 +325,15 @@ export class BoardView {
       if (this.board && this.board.cells[i] !== EMPTY) continue;
       const { px, py, x, y } = this.xy(i, g);
       if (x < g.bounds.left || x > g.bounds.right || y < g.bounds.top || y > g.bounds.bottom) continue;
-      ctx.fillStyle = t === BLACK ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.8)';
       const s = g.step * 0.24;
+      if (t === SEKI) {
+        // 빅이라 집으로 세지 않는 자리. 집 표시(꽉 찬 네모)와 헷갈리지 않게 **빈 네모**로 그린다.
+        ctx.strokeStyle = 'rgba(220,180,90,0.95)';
+        ctx.lineWidth = Math.max(1, g.step * 0.06);
+        ctx.strokeRect(px - s / 2, py - s / 2, s, s);
+        continue;
+      }
+      ctx.fillStyle = t === BLACK ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.8)';
       ctx.fillRect(px - s / 2, py - s / 2, s, s);
     }
     ctx.restore();

@@ -2,7 +2,7 @@
  * 계가 — 집 계산과 사석 판정.
  *
  * 두 가지 규칙 체계를 모두 지원한다(요구사항 67: 규칙에 따라 결과가 달라질 수 있음을 명시).
- *  - 'territory' (한국·일본식): 집 + 잡은 돌
+ *  - 'territory' (한국·일본식): 집 + 잡은 돌. **빅 안의 빈 점은 집으로 세지 않는다.**
  *  - 'area'      (중국식):      집 + 반상의 내 돌
  *
  * 죽은 돌 판정은 자동 추정 + 사용자 수정을 함께 쓴다.
@@ -10,6 +10,44 @@
  */
 
 import { BLACK, WHITE, EMPTY, opposite } from './board.js';
+import { canCapture } from './analysis.js';
+
+/**
+ * territory 배열에 쓰는 표식.
+ * BLACK/WHITE는 그 색의 집, EMPTY는 공배, SEKI는 **빅이라서 집으로 세지 않은 점**이다.
+ * 화면이 이 셋을 구분해 그린다 — 왜 집이 안 되는지 눈으로 보이게 하려는 것이다.
+ */
+export const SEKI = 3;
+
+/**
+ * 빅 판정을 시도할 무리의 최대 활로 수.
+ * 빅에 걸린 무리의 활로는 "자기 눈 + 나눠 쓰는 공배"뿐이라 실전에서 몇 개를 넘지 않는다.
+ * 이보다 활로가 많은 무리는 읽어 볼 것도 없이 빅이 아니다 — 대국 중 형세 판단을 위한 값싼 예선이다.
+ */
+const SEKI_MAX_LIBERTIES = 8;
+
+/**
+ * 이 빈 점이 **아무도 메울 수 없는 자리**인가 — 즉 빅의 공배인가.
+ * 흑이 메워도 잡히고 백이 메워도 잡히면 그렇다. 둘 수조차 없는(자충) 경우도 못 메우는 것이다.
+ */
+function isSekiLiberty(board, p) {
+  let hasBlack = false;
+  let hasWhite = false;
+  for (const nb of board.neighbors(p)) {
+    if (board.cells[nb] === BLACK) hasBlack = true;
+    else if (board.cells[nb] === WHITE) hasWhite = true;
+  }
+  if (!hasBlack || !hasWhite) return false;
+
+  for (const color of [BLACK, WHITE]) {
+    const probe = board.clone();
+    const r = probe.play(color, p);
+    if (!r.ok) continue;                       // 자충이라 둘 수조차 없다 = 메울 수 없다
+    if (r.captured && r.captured.length) return false;   // 메우면서 상대를 따낸다면 빅이 아니다
+    if (!canCapture(probe, p, opposite(color), { maxDepth: 6, maxNodes: 8000 }).captured) return false;
+  }
+  return true;
+}
 
 /**
  * Benson's algorithm — 상대가 몇 수를 두어도 절대 잡히지 않는 돌(무조건 삶)을 구한다.
@@ -192,36 +230,97 @@ export function score(board, opts = {}) {
     work.setStone(s, EMPTY);
   }
 
+  // ── 1. 살아 있는 돌을 무리별로 번호 매긴다 ─────────────────────────
+  const chainOf = new Int32Array(work.length).fill(-1);
+  const chains = [];                       // { color }
+  for (let i = 0; i < work.length; i++) {
+    if (work.cells[i] === EMPTY || chainOf[i] >= 0) continue;
+    const id = chains.length;
+    for (const st of work.group(i).stones) chainOf[st] = id;
+    chains.push({ color: work.cells[i] });
+  }
+
+  // ── 2. 빈 곳을 덩어리로 나누고, 누구와 맞닿아 있는지 적어 둔다 ─────
   const territory = new Int8Array(work.length);
   const visited = new Uint8Array(work.length);
-  let blackTerritory = 0;
-  let whiteTerritory = 0;
-  let dame = 0;
-
+  const regions = [];
   for (let i = 0; i < work.length; i++) {
     if (work.cells[i] !== EMPTY || visited[i]) continue;
-    const region = [];
-    const borders = new Set();
+    const points = [];
+    const borders = new Set();             // 맞닿은 색
+    const touching = new Set();            // 맞닿은 무리 번호
     const stack = [i];
     visited[i] = 1;
     while (stack.length) {
       const cur = stack.pop();
-      region.push(cur);
+      points.push(cur);
       for (const nb of work.neighbors(cur)) {
         const v = work.cells[nb];
         if (v === EMPTY) {
           if (!visited[nb]) { visited[nb] = 1; stack.push(nb); }
-        } else borders.add(v);
+        } else { borders.add(v); touching.add(chainOf[nb]); }
       }
     }
-    if (borders.size === 1) {
-      const owner = [...borders][0];
-      for (const p of region) territory[p] = owner;
-      if (owner === BLACK) blackTerritory += region.length;
-      else whiteTerritory += region.length;
-    } else {
-      dame += region.length;
+    regions.push({ points, borders, touching });
+  }
+
+  // ── 3. 빅(seki) 찾기 ───────────────────────────────────────────────
+  // 빅의 본질은 무리가 아니라 **자리**에 있다. "서로 메울 수 없는 공배"가 있으면 그것이 빅이다.
+  // 그래서 무리의 눈 수나 크기를 어림하지 않고, 공배 하나하나에 대해 직접 물어본다.
+  //
+  //   흑이 여기를 메우면 흑이 잡히는가?  백이 메우면 백이 잡히는가?
+  //   **양쪽 다 그렇다면** 그 자리는 아무도 메울 수 없는 자리 — 빅의 공배다.
+  //
+  // 이 정의는 "빅은 서로 손댈 수 없는 모양"이라는 설명 그대로다. 눈이 몇 개인지, 무리가 큰지 작은지
+  // 따질 필요가 없고, 대국 중간의 넓은 빈 곳에서도 (메워도 안 잡히므로) 저절로 걸러진다.
+  // 그 공배에 맞닿은 무리가 빅에 걸린 무리이고, 그 무리가 둘러싼 빈 곳은 집으로 세지 않는다.
+  const libertyCount = new Int32Array(chains.length);
+  for (let i = 0; i < work.length; i++) {
+    if (work.cells[i] !== EMPTY) continue;
+    const seen = new Set();
+    for (const nb of work.neighbors(i)) {
+      if (work.cells[nb] === EMPTY || seen.has(chainOf[nb])) continue;
+      seen.add(chainOf[nb]);
+      libertyCount[chainOf[nb]] += 1;
     }
+  }
+
+  const sekiChains = new Set();
+  for (const r of regions) {
+    if (r.borders.size < 2) continue;                    // 공배가 아닌 곳은 볼 것 없다
+    // 활로가 넉넉한 무리는 빅일 수 없다. 값싼 예선으로 걸러야 대국 중 형세 판단이 느려지지 않는다.
+    if ([...r.touching].some((c) => libertyCount[c] > SEKI_MAX_LIBERTIES)) continue;
+    for (const p of r.points) {
+      if (!isSekiLiberty(work, p)) continue;
+      for (const nb of work.neighbors(p)) {
+        if (work.cells[nb] !== EMPTY) sekiChains.add(chainOf[nb]);
+      }
+    }
+  }
+
+  // ── 4. 집 세기 ─────────────────────────────────────────────────────
+  let blackTerritory = 0;
+  let whiteTerritory = 0;
+  let dame = 0;
+  let sekiPoints = 0;
+  for (const r of regions) {
+    if (r.borders.size !== 1) { dame += r.points.length; continue; }
+    const owner = [...r.borders][0];
+    // 둘러싼 무리가 **전부** 빅에 걸려 있을 때만 빅의 눈이다.
+    // 한쪽이라도 멀쩡히 산 무리가 둘러싸고 있으면 그것은 그 무리의 집이다.
+    const inSeki = [...r.touching].every((c) => sekiChains.has(c));
+
+    // 한국·일본식(집 계가)에서는 **빅 안의 빈 점은 집이 아니다.**
+    // 서로 손을 댈 수 없어서 남은 자리이지, 둘러싸서 얻은 집이 아니기 때문이다.
+    // 중국식(점 계가)은 반대로 반면의 모든 점을 세므로 그대로 owner의 것이 된다.
+    if (inSeki && rules === 'territory') {
+      for (const p of r.points) territory[p] = SEKI;
+      sekiPoints += r.points.length;
+      continue;
+    }
+    for (const p of r.points) territory[p] = owner;
+    if (owner === BLACK) blackTerritory += r.points.length;
+    else whiteTerritory += r.points.length;
   }
 
   let black;
@@ -247,6 +346,8 @@ export function score(board, opts = {}) {
     black, white, diff, winner, text,
     territory, dame,
     blackTerritory, whiteTerritory,
+    // 빅으로 판정되어 집에서 빠진 점 수와, 빅에 걸린 무리 수(화면에 그대로 보여 준다)
+    sekiPoints, sekiGroups: sekiChains.size,
     komi, rules,
   };
 }

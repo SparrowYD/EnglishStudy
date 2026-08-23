@@ -101,3 +101,64 @@ test('형세판단 5단계 표현', () => {
   assert.equal(verdictOf(-6).text, '백 약간 우세');
   assert.equal(verdictOf(-20).text, '백 우세');
 });
+
+/* ─────────────────────── 빅(seki) — 한국식 계가 ─────────────────────── */
+
+/**
+ * 눈 있는 빅. 9로 반면 왼쪽 아래에 만든다.
+ *
+ *   X X X X X X          C1이 아무도 메울 수 없는 자리(빅의 공배)다.
+ *   O O O O . X          흑이 메우면 흑 D1이 잡히고, 백이 메우면 백 무리가 잡힌다.
+ *   . O . X . X          그래서 백의 눈 A1은 **집이 되지 않는다.**
+ */
+const SEKI_BOARD = {
+  size: 9,
+  black: ['A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'F2', 'F1', 'D1'],
+  white: ['A2', 'B2', 'C2', 'D2', 'B1'],
+};
+
+test('빅: 서로 메울 수 없는 공배를 찾아낸다', () => {
+  const b = setup(SEKI_BOARD);
+  const s = score(b, { komi: 0, rules: 'territory', dead: new Set() });
+  assert.equal(s.sekiGroups, 2, '백 무리와 흑 D1이 빅에 걸려 있다');
+});
+
+test('한국식 계가: 빅 안의 빈 점은 집이 아니다', () => {
+  const b = setup(SEKI_BOARD);
+  const s = score(b, { komi: 0, rules: 'territory', dead: new Set() });
+  assert.equal(s.sekiPoints, 1, '백의 눈 A1 한 점이 집에서 빠진다');
+  assert.equal(s.whiteTerritory, 0, '빅에 걸린 백은 집이 없다');
+  assert.equal(s.territory[fromLabel('A1', 9)], 3, '반면에 빅 표식(SEKI)으로 남는다');
+});
+
+test('중국식 계가에서는 같은 자리를 그대로 센다', () => {
+  const b = setup(SEKI_BOARD);
+  const s = score(b, { komi: 0, rules: 'area', dead: new Set() });
+  assert.equal(s.sekiPoints, 0, '점 계가는 반면의 모든 점을 세므로 빼지 않는다');
+  assert.equal(s.whiteTerritory, 1, 'A1은 백의 점으로 남는다');
+});
+
+test('빅 판정이 대국 중간의 넓은 빈 곳을 빅으로 오해하지 않는다', () => {
+  // 화점 네 개만 놓인 초반. 서로 마주 보는 돌이 있어도 빅이 아니다.
+  const b = setup({ size: 19, black: ['D4', 'Q16'], white: ['Q4', 'D16'] });
+  const s = score(b, { komi: 0, rules: 'territory', dead: new Set() });
+  assert.equal(s.sekiGroups, 0);
+  assert.equal(s.sekiPoints, 0);
+});
+
+test('빅 판정이 그냥 죽은 돌을 빅으로 만들지 않는다', () => {
+  // 흑에게 완전히 둘러싸인 백 한 점. 흑이 메우면 잡히지 않으므로 빅이 아니다.
+  const b = setup({
+    size: 9,
+    black: ['B1', 'B2', 'C2', 'D2', 'D1', 'C4', 'B4', 'D4', 'A4'],
+    white: ['C1'],
+  });
+  const s = score(b, { komi: 0, rules: 'territory', dead: new Set() });
+  assert.equal(s.sekiGroups, 0);
+});
+
+test('빅에 걸린 무리가 아닌 산 무리의 집은 그대로 센다', () => {
+  const b = setup(SEKI_BOARD);
+  const s = score(b, { komi: 0, rules: 'territory', dead: new Set() });
+  assert.ok(s.blackTerritory > 50, `바깥 흑집은 그대로여야 합니다 (${s.blackTerritory})`);
+});

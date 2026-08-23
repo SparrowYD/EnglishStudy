@@ -390,6 +390,14 @@ export function freePlayScreen(app) {
         el('dt', { text: '흑' }), el('dd', { text: `${s.black}집` }),
         el('dt', { text: '백' }), el('dd', { text: `${s.white}집 (덤 ${s.komi} 포함)` }),
       ),
+      // 빅이 있으면 왜 그 자리가 집이 아닌지 그 자리에서 설명한다(요구사항 67·79).
+      s.sekiGroups > 0
+        ? el('p', { class: 'faint' }, rich(
+          `**빅**에 걸린 무리가 ${s.sekiGroups}개 있습니다. 한국식 계가에서는 **빅 안의 빈 점을 집으로 세지 않습니다** — `
+          + `서로 손댈 수 없어 남은 자리이지 둘러싸서 얻은 집이 아니기 때문입니다.`
+          + (s.sekiPoints > 0 ? ` 이번 판에서는 ${s.sekiPoints}점이 빠졌습니다(반면의 빈 네모).` : ''),
+        ))
+        : null,
       el('h2', { text: s.text, style: { marginTop: '10px' } }),
       el('div', { class: 'row' },
         button('이 결과로 마치기', () => finishWith({
