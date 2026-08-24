@@ -9,6 +9,16 @@ npm start        # http://localhost:8080 에서 열림
 npm test         # 규칙 엔진·문제 엔진·사활·계가·AI·복기·중계 서버 테스트 (103개, 약 10분)
 ```
 
+설치도 서버도 없이 그냥 열어 보려면 — **한 파일로 묶어 준다.**
+
+```bash
+npm run bundle   # dist/baduk100.html — 더블클릭으로 열리는 한 파일 (633KB)
+```
+
+ES 모듈은 `file://`에서 로드되지 않아 원본 그대로는 더블클릭으로 열리지 않는다.
+`tools/bundle.js`가 모듈 35개와 CSS를 인라인 `<script type="module">` 하나로 묶어 그 제약을 없앤다.
+묶인 파일도 브라우저 테스트 35개를 그대로 통과한다(`node tools/smoke.js <주소>`).
+
 브라우저 통합 테스트(선택, `npm i -D playwright` 필요):
 
 ```bash
@@ -165,7 +175,7 @@ baduk/
 ├─ js/ai/           AIEngine ├ EducationalAI ├ LocalBasicAI └ KataGoAdapter
 ├─ js/content/      커리큘럼·LEVEL 1~100·도감·용어사전·콘텐츠 검증기
 ├─ js/ui/           캔버스 바둑판 + 화면들
-└─ tools/           정적 서버·GTP 중계 서버·내장 GTP 엔진·콘텐츠 진단·브라우저 테스트
+└─ tools/           정적 서버·한 파일 묶기·GTP 중계 서버·내장 GTP 엔진·콘텐츠 진단·브라우저 테스트
 ```
 
 `js/content/validate.js`가 콘텐츠를 자동 검사한다.

@@ -1,2 +1,5 @@
 node_modules/
 package-lock.json
+# 발행용 조각은 아티팩트로만 쓰므로 저장소에 두지 않는다.
+# dist/baduk100.html(더블클릭으로 여는 한 파일)은 시연용으로 일부러 커밋한다.
+dist/baduk100.frag.html

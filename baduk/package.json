@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "bridge": "node tools/gtp-bridge.js",
+    "bundle": "node tools/bundle.js && node tools/bundle.js --fragment",
     "check:content": "node tools/check-content.js",
     "start": "node tools/serve.js",
     "test:browser": "node tools/smoke.js && node tools/playthrough.js"
